@@ -1,5 +1,32 @@
 # Changelog - DevScope
 
+## [0.2.0] - 2025-10-16
+
+### Nova Feature: Header Editor ✨
+
+**Implementação completa do editor de headers HTTP**
+
+#### Funcionalidades:
+- **Adicionar headers**: Tecla `n` para adicionar novo header (Key + Value)
+- **Editar headers**: Tecla `e` ou `Enter` para editar header selecionado
+- **Deletar headers**: Tecla `d` para remover header
+- **Navegação**: `↑/↓` para navegar entre headers
+- **UI consistente**: Painéis com bordas, feedback visual de foco
+
+#### Implementação Técnica:
+- Novo estado `StateHeaderEditor`
+- Arquivo separado `internal/ui/editors.go` para organização
+- Dois textinputs (Key e Value) com validação
+- Map de headers sincronizado com a lista visual
+- Função `buildHeaderList()` para sincronizar estado
+
+#### Arquivos Modificados:
+- `internal/ui/model.go`: Novos estados, campos, navegação
+- `internal/ui/editors.go`: Lógica completa do editor (NEW)
+- Linhas adicionadas: ~299
+
+---
+
 ## [0.1.2] - 2025-10-16
 
 ### Correções de Clipboard

@@ -576,7 +576,7 @@ require (
 
 ## 🚀 Roadmap
 
-### MVP (v0.1.0) - Completo ✅
+### MVP (v0.2.0) - Completo ✅
 - [x] Setup projeto e estrutura
 - [x] Request Builder básico (GET)
 - [x] HTTP client
@@ -587,8 +587,11 @@ require (
 - [x] Tela de ajuda
 - [x] Navegação com Tab entre campos
 - [x] Input responsivo
-- [ ] Header editor (próxima versão)
-- [ ] Body editor (próxima versão)
+- [x] Header editor (IMPLEMENTADO v0.2.0)
+  - Adicionar, editar e deletar headers
+  - UI consistente com painéis
+  - Validação de campos
+- [ ] Body editor JSON (próxima versão v0.3.0)
 
 ### v0.2.0 - Features Adicionais
 - [ ] Themes customizáveis
