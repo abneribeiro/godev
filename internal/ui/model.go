@@ -448,13 +448,22 @@ func (m Model) viewRequestBuilder() string {
 func (m Model) viewLoading() string {
 	var b strings.Builder
 
+	b.WriteString(TitleStyle.Render("Sending Request"))
 	b.WriteString("\n\n")
-	b.WriteString(TextStyle.Render("Sending request..."))
-	b.WriteString("\n")
-	b.WriteString(MutedStyle.Render(fmt.Sprintf("%s %s", m.method, m.urlInput.Value())))
+
+	requestInfo := fmt.Sprintf("%s %s", m.method, m.urlInput.Value())
+	b.WriteString(TextStyle.Render(requestInfo))
 	b.WriteString("\n\n")
-	b.WriteString(m.spinner.View() + " Loading")
+
+	loadingBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color(ColorAccent)).
+		Padding(2, 4).
+		Render(SpinnerStyle.Render(m.spinner.View()) + "  " + TextStyle.Render("Loading..."))
+
+	b.WriteString(loadingBox)
 	b.WriteString("\n\n")
+	b.WriteString(MutedStyle.Render("Please wait while we fetch the response"))
 
 	return Center(m.width, m.height, b.String())
 }
@@ -469,8 +478,18 @@ func (m Model) viewResponse() string {
 	b.WriteString(TitleStyle.Render("Response"))
 	b.WriteString("\n\n")
 
+	requestInfo := fmt.Sprintf("%s %s", m.method, m.urlInput.Value())
+	b.WriteString(MutedStyle.Render(requestInfo))
+	b.WriteString("\n\n")
+
 	if m.response.Error != nil {
-		b.WriteString(ErrorStyle.Render(fmt.Sprintf("Error: %v", m.response.Error)))
+		errorPanel := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color(ColorError)).
+			Padding(1, 2).
+			Width(m.width - 10).
+			Render(ErrorStyle.Render(fmt.Sprintf("Error: %v", m.response.Error)))
+		b.WriteString(errorPanel)
 	} else {
 		statusStyle := GetStatusStyle(m.response.StatusCode)
 		statusLine := fmt.Sprintf("Status: %s • %s • %s",
@@ -480,24 +499,60 @@ func (m Model) viewResponse() string {
 		b.WriteString(statusStyle.Render(statusLine))
 		b.WriteString("\n\n")
 
-		maxLines := m.height - 12
+		maxLines := m.height - 15
 		lines := strings.Split(m.response.Body, "\n")
+		totalLines := len(lines)
 
 		start := m.scrollOffset
 		end := start + maxLines
-		if end > len(lines) {
-			end = len(lines)
+		if end > totalLines {
+			end = totalLines
 		}
-		if start < len(lines) {
+		if start >= totalLines {
+			start = totalLines - maxLines
+			if start < 0 {
+				start = 0
+			}
+			m.scrollOffset = start
+		}
+
+		responsePanel := ""
+		if start < totalLines {
 			visibleLines := lines[start:end]
-			b.WriteString(CodeStyle.Render(strings.Join(visibleLines, "\n")))
+			responseContent := strings.Join(visibleLines, "\n")
+
+			scrollInfo := ""
+			if totalLines > maxLines {
+				scrollInfo = fmt.Sprintf("\n\n%s Lines %d-%d of %d",
+					MutedStyle.Render("│"),
+					start+1,
+					end,
+					totalLines)
+			}
+
+			responsePanel = lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(lipgloss.Color(ColorBorder)).
+				Padding(1, 2).
+				Width(m.width - 10).
+				Render(CodeStyle.Render(responseContent) + scrollInfo)
 		}
+		b.WriteString(responsePanel)
 	}
+
+	b.WriteString("\n\n")
+
+	buttons := RenderButton("Back", true) + "  "
+	buttons += RenderButton("Save (s)", false) + "  "
+	if m.response.Error == nil {
+		buttons += RenderButton("Copy", false)
+	}
+	b.WriteString(buttons)
 
 	b.WriteString("\n\n")
 	b.WriteString(RenderFooter("Esc: back • s: save • ↑↓: scroll"))
 
-	return b.String()
+	return Center(m.width, m.height, b.String())
 }
 
 func (m Model) viewRequestList() string {
