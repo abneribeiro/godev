@@ -21,6 +21,8 @@ const (
 	StateLoading
 	StateViewResponse
 	StateRequestList
+	StateHeaderEditor
+	StateBodyEditor
 	StateHelp
 )
 
@@ -46,6 +48,12 @@ type Model struct {
 	selectedReqIdx  int
 	scrollOffset    int
 
+	headerKeyInput   textinput.Model
+	headerValueInput textinput.Model
+	headerList       []string
+	selectedHeader   int
+	editingHeader    bool
+
 	err error
 }
 
@@ -58,6 +66,16 @@ func NewModel() *Model {
 	ti.CharLimit = 2000
 	ti.Width = 60
 
+	headerKey := textinput.New()
+	headerKey.Placeholder = "Header-Name"
+	headerKey.CharLimit = 100
+	headerKey.Width = 30
+
+	headerValue := textinput.New()
+	headerValue.Placeholder = "Header Value"
+	headerValue.CharLimit = 500
+	headerValue.Width = 50
+
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = SpinnerStyle
@@ -65,16 +83,21 @@ func NewModel() *Model {
 	store, err := storage.NewStorage()
 
 	m := &Model{
-		state:      StateRequestBuilder,
-		method:     "GET",
-		urlInput:   ti,
-		headers:    make(map[string]string),
-		body:       "",
-		focusIndex: 1,
-		httpClient: httpclient.NewClient(30 * time.Second),
-		spinner:    s,
-		storage:    store,
-		err:        err,
+		state:            StateRequestBuilder,
+		method:           "GET",
+		urlInput:         ti,
+		headers:          make(map[string]string),
+		body:             "",
+		focusIndex:       1,
+		httpClient:       httpclient.NewClient(30 * time.Second),
+		spinner:          s,
+		storage:          store,
+		err:              err,
+		headerKeyInput:   headerKey,
+		headerValueInput: headerValue,
+		headerList:       []string{},
+		selectedHeader:   0,
+		editingHeader:    false,
 	}
 
 	if m.storage != nil {
@@ -146,6 +169,10 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleResponseViewKeys(msg)
 	case StateRequestList:
 		return m.handleRequestListKeys(msg)
+	case StateHeaderEditor:
+		return m.handleHeaderEditorKeys(msg)
+	case StateBodyEditor:
+		return m.handleBodyEditorKeys(msg)
 	case StateHelp:
 		return m.handleHelpKeys(msg)
 	case StateLoading:
@@ -168,7 +195,7 @@ func (m Model) handleRequestBuilderKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "tab":
 		m.focusIndex++
-		if m.focusIndex > 4 {
+		if m.focusIndex > 5 {
 			m.focusIndex = 0
 		}
 
@@ -182,7 +209,7 @@ func (m Model) handleRequestBuilderKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "shift+tab":
 		m.focusIndex--
 		if m.focusIndex < 0 {
-			m.focusIndex = 4
+			m.focusIndex = 5
 		}
 
 		if m.focusIndex == 1 {
@@ -222,14 +249,22 @@ func (m Model) handleRequestBuilderKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "enter":
 		switch m.focusIndex {
+		case 0:
+			return m, nil
+		case 1:
+			return m, nil
 		case 2:
-			m.state = StateRequestList
+			m.state = StateHeaderEditor
+			m.buildHeaderList()
 			return m, nil
 		case 3:
 			if m.urlInput.Value() != "" {
 				return m, m.sendRequest()
 			}
 		case 4:
+			m.state = StateRequestList
+			return m, nil
+		case 5:
 			return m, tea.Quit
 		}
 		return m, nil
@@ -376,6 +411,10 @@ func (m Model) View() string {
 		return m.viewResponse()
 	case StateRequestList:
 		return m.viewRequestList()
+	case StateHeaderEditor:
+		return m.viewHeaderEditor()
+	case StateBodyEditor:
+		return m.viewBodyEditor()
 	case StateHelp:
 		return m.viewHelp()
 	}
@@ -427,16 +466,15 @@ func (m Model) viewRequestBuilder() string {
 	headersCount := len(m.headers)
 	headersText := fmt.Sprintf("Headers: (%d)", headersCount)
 	if m.focusIndex == 2 {
-		b.WriteString(MutedStyle.Render(headersText) + " ")
-		b.WriteString(TextStyle.Render("[Not implemented yet]"))
+		b.WriteString(ButtonActive.Render("[ " + headersText + " ]"))
 	} else {
-		b.WriteString(DimStyle.Render(headersText + " [Not implemented yet]"))
+		b.WriteString(MutedStyle.Render(headersText))
 	}
 	b.WriteString("\n\n\n")
 
 	buttons := RenderButton("Send Request", m.focusIndex == 3) + "  "
-	buttons += RenderButton("Load Saved", m.focusIndex == 2) + "  "
-	buttons += RenderButton("Quit", m.focusIndex == 4)
+	buttons += RenderButton("Load Saved", m.focusIndex == 4) + "  "
+	buttons += RenderButton("Quit", m.focusIndex == 5)
 	b.WriteString(buttons)
 
 	b.WriteString("\n\n")
