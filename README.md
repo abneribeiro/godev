@@ -1,221 +1,290 @@
-# DevScope
+# GoDev
 
-Uma aplicação TUI (Text-based User Interface) para inspeção e teste de APIs HTTP diretamente do terminal.
+> A lightweight, terminal-based HTTP API inspector and testing tool
 
-![Version](https://img.shields.io/badge/version-0.2.0-orange)
-![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/abneribeiro/godev/releases)
+[![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-00ADD8.svg)](https://go.dev/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 
-## Sobre
+## Overview
 
-**DevScope** é uma alternativa leve e focada ao Postman/Insomnia para desenvolvedores que preferem o ambiente terminal. Com ele você pode:
+**GoDev** is a modern, terminal-based alternative to Postman and Insomnia, designed for developers who live in the command line. Built with Go and the elegant Bubbletea framework, it provides a fast, keyboard-driven interface for testing and debugging HTTP APIs.
 
-- Fazer requests HTTP (GET, POST, PUT, DELETE, PATCH)
-- Visualizar respostas JSON formatadas com syntax highlighting
-- Salvar requests para reuso
-- Navegar rapidamente entre requests salvos
-- Tudo sem sair do terminal
+### Key Features
 
-## Instalação
+- **Full HTTP Support** - GET, POST, PUT, DELETE, PATCH methods
+- **Request Builder** - Intuitive TUI for building API requests
+- **Header Management** - Add, edit, and delete custom headers
+- **Query Parameters** - Visual editor with full persistence
+- **JSON Body Editor** - Built-in validation and syntax support
+- **Response Viewer** - Formatted JSON with syntax highlighting
+- **Request Persistence** - Save and reload frequently used requests
+- **Visual Feedback** - Confirmation messages for all operations
+- **Clipboard Integration** - Copy responses with a single keystroke
+- **Offline-First** - No telemetry, all data stored locally
+
+## Installation
+
+### Download Binary (Recommended)
+
+Download the latest release for your platform from the [releases page](https://github.com/abneribeiro/godev/releases):
+
+```bash
+# Linux/macOS
+wget https://github.com/abneribeiro/godev/releases/download/v0.2.0/godev-linux-amd64
+chmod +x godev-linux-amd64
+sudo mv godev-linux-amd64 /usr/local/bin/godev
+
+# Or use the install script
+curl -sSL https://raw.githubusercontent.com/abneribeiro/godev/main/install.sh | bash
+```
 
 ### Via Go Install
 
 ```bash
-go install github.com/abneribeiro/devscope@latest
+go install github.com/abneribeiro/godev@latest
 ```
 
-### Build Manual
+### Build from Source
 
 ```bash
-git clone https://github.com/abneribeiro/devscope
-cd devscope
-go build -o devscope
-./devscope
+git clone https://github.com/abneribeiro/godev.git
+cd godev
+go build -o godev
+./godev
 ```
 
-## Uso Rápido
+## Quick Start
 
-1. Execute o programa:
-```bash
-devscope
-```
+1. Launch the application:
+   ```bash
+   godev
+   ```
 
-2. Digite a URL da API que deseja testar
+2. Enter your API URL (e.g., `https://api.github.com/users/octocat`)
 
-3. Use `Tab` para navegar entre os campos
+3. Navigate with `Tab` and `↑↓` keys
 
-4. Pressione `Enter` para enviar o request
+4. Press `Enter` to send the request
 
-5. Visualize a resposta formatada
+5. View the formatted response
 
-6. Pressione `s` para salvar o request
+6. Press `s` to save the request for later use
 
-7. Use `Ctrl+L` para carregar requests salvos
+## Usage
 
-## Atalhos de Teclado
-
-### Principais
-- `Ctrl+Q` - Sair da aplicação
-- `Ctrl+V` - Colar URL
-- `Ctrl+C` - Copiar (ou sair se campo vazio)
-- `Tab` - Próximo campo
-- `Enter` - Enviar request
-- `←/→` - Mudar método HTTP
-- `Ctrl+L` - Carregar requests salvos
-
-> 📖 **[Ver todos os atalhos](KEYBOARD_SHORTCUTS.md)** - Lista completa com clipboard, edição e navegação
-
-## Exemplos
-
-### Teste Rápido com JSONPlaceholder
-
-1. Abra o DevScope
-2. URL: `https://jsonplaceholder.typicode.com/users`
-3. Método: `GET` (padrão)
-4. Pressione `Enter`
-5. Visualize a lista de usuários
-
-### POST com JSON Body
-
-1. URL: `https://httpbin.org/post`
-2. Método: `POST` (use `←/→` para mudar)
-3. Tab até "Headers" → Pressione Enter → Adicione header `Content-Type: application/json`
-4. Esc para voltar, Tab até "Body" → Pressione Enter
-5. Digite o JSON: `{"name": "John", "email": "john@example.com"}`
-6. Ctrl+S para salvar, depois Enter no botão "Send Request"
-
-### Reutilizar Request Salvo
-
-1. Pressione `Ctrl+L`
-2. Navegue com `↑/↓`
-3. Pressione `Enter` para carregar
-4. Pressione `Enter` novamente para executar
-
-## Configuração
-
-Os requests salvos ficam armazenados em:
-```
-~/.devscope/config.json
-```
-
-Você pode editar este arquivo manualmente se necessário.
-
-## Estrutura do Projeto
+### Making Your First Request
 
 ```
-devscope/
-├── main.go                    # Entry point
+1. URL: https://jsonplaceholder.typicode.com/posts/1
+2. Method: GET (default)
+3. Press Enter → View response
+```
+
+### POST Request with JSON Body
+
+```
+1. Method: POST (use ←/→ to change)
+2. URL: https://httpbin.org/post
+3. Tab to Headers → Press Enter
+4. Add header: Content-Type: application/json
+5. Esc → Tab to Body → Press Enter
+6. Enter JSON: {"title": "Hello", "body": "World"}
+7. Ctrl+S to save → Send request
+```
+
+### Adding Query Parameters
+
+```
+1. Tab to "Query Params" → Press Enter
+2. Press 'n' to add new parameter
+3. Key: page, Value: 1
+4. Press Enter to save
+5. URL automatically updates: https://api.example.com?page=1
+```
+
+## Keyboard Shortcuts
+
+### Navigation
+| Key | Action |
+|-----|--------|
+| `Tab` | Next field |
+| `Shift+Tab` | Previous field |
+| `↑↓` / `j k` | Navigate lists |
+| `←→` | Change HTTP method |
+
+### Actions
+| Key | Action |
+|-----|--------|
+| `Enter` | Send request / Select item |
+| `Ctrl+L` | Load saved requests |
+| `Ctrl+H` | Edit headers |
+| `Ctrl+B` | Edit body |
+| `Ctrl+Q` | Edit query parameters |
+| `s` | Save current request |
+| `c` | Copy response to clipboard |
+| `?` | Show help |
+
+### Editors
+| Key | Action |
+|-----|--------|
+| `n` / `a` | Add new item |
+| `e` | Edit selected item |
+| `d` | Delete (with confirmation) |
+| `Esc` | Exit editor |
+| `Ctrl+S` | Save & validate (body editor) |
+
+## Configuration
+
+### Storage Location
+
+All saved requests are stored in:
+```
+~/.godev/config.json
+```
+
+### Data Structure
+
+```json
+{
+  "version": "0.2.0",
+  "requests": [
+    {
+      "id": "uuid",
+      "name": "GET https://api.example.com",
+      "method": "GET",
+      "url": "https://api.example.com",
+      "headers": {"Authorization": "Bearer token"},
+      "body": "{\"key\": \"value\"}",
+      "query_params": {"page": "1", "limit": "10"},
+      "created_at": "2025-10-17T...",
+      "last_used": "2025-10-17T..."
+    }
+  ]
+}
+```
+
+### Migration from DevScope
+
+If you previously used DevScope, GoDev will automatically migrate your data from `~/.devscope` to `~/.godev` on first launch.
+
+## Architecture
+
+GoDev is built with:
+
+- **[Go](https://go.dev/)** - Fast, compiled, garbage-collected language
+- **[Bubbletea](https://github.com/charmbracelet/bubbletea)** - Elm-inspired TUI framework
+- **[Lipgloss](https://github.com/charmbracelet/lipgloss)** - Style definitions for TUIs
+- **[Bubbles](https://github.com/charmbracelet/bubbles)** - Common TUI components
+
+```
+godev/
+├── main.go                    # Application entry point
 ├── internal/
 │   ├── ui/
-│   │   ├── model.go           # State machine do Bubbletea
-│   │   └── styles.go          # Design system (Lipgloss)
+│   │   ├── model.go           # State machine & business logic
+│   │   ├── editors.go         # Header/Body/Query editors
+│   │   └── styles.go          # Visual design system
 │   ├── http/
-│   │   └── client.go          # Cliente HTTP
+│   │   └── client.go          # HTTP client wrapper
 │   └── storage/
-│       └── requests.go        # Persistência de requests
-├── go.mod
-├── go.sum
-├── README.md
-└── DEVSCOPE.md               # Especificação completa
+│       └── requests.go        # Request persistence & migration
+└── go.mod
 ```
-
-## Tecnologias
-
-- [Go](https://golang.org/) - Linguagem
-- [Bubbletea](https://github.com/charmbracelet/bubbletea) - Framework TUI
-- [Lipgloss](https://github.com/charmbracelet/lipgloss) - Estilização
-- [Bubbles](https://github.com/charmbracelet/bubbles) - Componentes TUI
 
 ## Roadmap
 
-### v0.2.0 (Atual)
-- [x] Request Builder básico
-- [x] Suporte a métodos HTTP (GET, POST, PUT, DELETE, PATCH)
-- [x] Visualização de resposta formatada
-- [x] Persistência de requests
-- [x] Lista de requests salvos
-- [x] Editor de headers (adicionar, editar, deletar)
-- [x] Validação de URL
-- [x] Copy to clipboard da resposta
-- [x] Enter na URL para enviar request
-- [x] Query params editor
-- [x] Response headers viewer
-- [x] Editor de body JSON
+### v0.2.0 (Current)
+- [x] HTTP method support (GET, POST, PUT, DELETE, PATCH)
+- [x] Header editor with CRUD operations
+- [x] Query parameters with persistence
+- [x] JSON body editor with validation
+- [x] Response viewer with syntax highlighting
+- [x] Request persistence and loading
+- [x] Visual feedback system
+- [x] Delete confirmation dialogs
+- [x] Automatic config migration
 
 ### v0.3.0
-- [ ] Export request para cURL
-- [ ] Import cURL para request
-- [ ] Search/filter na lista
-- [ ] Themes customizáveis
+- [ ] Export requests to cURL commands
+- [ ] Import cURL commands as requests
+- [ ] Search and filter saved requests
+- [ ] Custom color themes
+- [ ] Request history tracking
 
 ### v0.4.0
-- [ ] Environment variables
-- [ ] Request chaining
+- [ ] Environment variables support
+- [ ] Request chaining (use response in next request)
 - [ ] GraphQL support
 - [ ] WebSocket inspector
+- [ ] Response time metrics
 
 ### v1.0.0
-- [ ] Database explorer
-- [ ] Metrics dashboard
 - [ ] Performance benchmarking
 - [ ] Plugin system
+- [ ] Collections/workspaces
+- [ ] Team sharing (export/import collections)
 
-## Contribuindo
+## Contributing
 
-Contribuições são bem-vindas! Por favor:
+Contributions are welcome! Please follow these steps:
 
-1. Fork o repositório
-2. Crie uma branch: `git checkout -b feat/nova-feature`
-3. Commit: `git commit -m "feat: adiciona nova feature"`
-4. Push: `git push origin feat/nova-feature`
-5. Abra um Pull Request
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feat/amazing-feature`
+3. Commit your changes: `git commit -m "feat: add amazing feature"`
+4. Push to the branch: `git push origin feat/amazing-feature`
+5. Open a Pull Request
 
-### Padrões de Commit
+### Commit Convention
 
-- `feat:` - Nova funcionalidade
-- `fix:` - Correção de bug
-- `refactor:` - Refatoração de código
-- `docs:` - Documentação
-- `test:` - Testes
-- `style:` - Formatação
+We follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `refactor:` - Code refactoring
+- `docs:` - Documentation changes
+- `test:` - Test additions/modifications
+- `chore:` - Maintenance tasks
 
 ## Troubleshooting
 
-### Terminal não renderiza cores
+### Colors not displaying correctly
 
-Verifique se seu terminal suporta true color:
+Ensure your terminal supports true color:
 ```bash
-echo $COLORTERM  # deve retornar "truecolor" ou "24bit"
+echo $COLORTERM  # Should return "truecolor" or "24bit"
 ```
 
-### Config não é salvo
+### Configuration not saving
 
-Verifique as permissões:
+Check directory permissions:
 ```bash
-mkdir -p ~/.devscope
-chmod 755 ~/.devscope
+mkdir -p ~/.godev
+chmod 755 ~/.godev
 ```
 
-### Erro ao compilar
+### Build errors
 
-Certifique-se de ter Go 1.21+ instalado:
+Verify Go version:
 ```bash
-go version
+go version  # Should be 1.21 or higher
 ```
 
-## Licença
+## License
 
-MIT License - Veja [LICENSE](LICENSE) para detalhes
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Autor
+## Author
 
-Abner Ribeiro - [GitHub](https://github.com/abneribeiro)
+**Abner Ribeiro**
+- GitHub: [@abneribeiro](https://github.com/abneribeiro)
 
-## Agradecimentos
+## Acknowledgments
 
-- [Charm](https://charm.sh/) - Pela incrível stack de ferramentas TUI
-- Comunidade Go - Pelo suporte e recursos
+- [Charm](https://charm.sh/) - For the amazing TUI toolkit
+- The Go community - For excellent tooling and support
 
 ---
 
-**Feito com ❤️ e Go**
+**Built with Go** • [Report Bug](https://github.com/abneribeiro/godev/issues) • [Request Feature](https://github.com/abneribeiro/godev/issues)
