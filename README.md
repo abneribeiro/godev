@@ -2,7 +2,7 @@
 
 Uma aplicação TUI (Text-based User Interface) para inspeção e teste de APIs HTTP diretamente do terminal.
 
-![Version](https://img.shields.io/badge/version-0.1.0-orange)
+![Version](https://img.shields.io/badge/version-0.2.0-orange)
 ![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -79,10 +79,10 @@ devscope
 
 1. URL: `https://httpbin.org/post`
 2. Método: `POST` (use `←/→` para mudar)
-3. Tab até Headers → (feature em desenvolvimento)
-4. Tab até Body → (feature em desenvolvimento)
-5. Adicione: `{"name": "John", "email": "john@example.com"}`
-6. Pressione `Enter`
+3. Tab até "Headers" → Pressione Enter → Adicione header `Content-Type: application/json`
+4. Esc para voltar, Tab até "Body" → Pressione Enter
+5. Digite o JSON: `{"name": "John", "email": "john@example.com"}`
+6. Ctrl+S para salvar, depois Enter no botão "Send Request"
 
 ### Reutilizar Request Salvo
 
@@ -128,23 +128,27 @@ devscope/
 
 ## Roadmap
 
-### v0.1.0 (MVP) - Atual
+### v0.2.0 (Atual)
 - [x] Request Builder básico
 - [x] Suporte a métodos HTTP (GET, POST, PUT, DELETE, PATCH)
 - [x] Visualização de resposta formatada
 - [x] Persistência de requests
 - [x] Lista de requests salvos
-- [ ] Editor de headers
-- [ ] Editor de body JSON
+- [x] Editor de headers (adicionar, editar, deletar)
+- [x] Validação de URL
+- [x] Copy to clipboard da resposta
+- [x] Enter na URL para enviar request
+- [x] Query params editor
+- [x] Response headers viewer
+- [x] Editor de body JSON
 
-### v0.2.0
-- [ ] Query params editor
-- [ ] Response headers viewer
+### v0.3.0
 - [ ] Export request para cURL
 - [ ] Import cURL para request
 - [ ] Search/filter na lista
+- [ ] Themes customizáveis
 
-### v0.3.0
+### v0.4.0
 - [ ] Environment variables
 - [ ] Request chaining
 - [ ] GraphQL support

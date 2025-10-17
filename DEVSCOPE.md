@@ -1,8 +1,8 @@
 # DevScope TUI - Especificação Completa
 
-**Versão:** 0.1.0
-**Data:** 2025-10-16
-**Status:** MVP em desenvolvimento
+**Versão:** 0.2.0
+**Data:** 2025-10-17
+**Status:** MVP funcional com Header Editor
 
 ---
 
