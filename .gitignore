@@ -19,6 +19,7 @@ vendor/
 # Go workspace file
 go.work
 
+RELEASE.md
 # IDE
 .vscode/
 .idea/
