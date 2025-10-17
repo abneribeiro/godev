@@ -11,20 +11,22 @@ import (
 )
 
 const (
-	configDir  = ".devscope"
-	configFile = "config.json"
-	version    = "0.1.0"
+	oldConfigDir = ".devscope"
+	configDir    = ".godev"
+	configFile   = "config.json"
+	version      = "0.2.0"
 )
 
 type SavedRequest struct {
-	ID        string            `json:"id"`
-	Name      string            `json:"name"`
-	Method    string            `json:"method"`
-	URL       string            `json:"url"`
-	Headers   map[string]string `json:"headers"`
-	Body      string            `json:"body"`
-	CreatedAt time.Time         `json:"created_at"`
-	LastUsed  time.Time         `json:"last_used"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Method      string            `json:"method"`
+	URL         string            `json:"url"`
+	Headers     map[string]string `json:"headers"`
+	Body        string            `json:"body"`
+	QueryParams map[string]string `json:"query_params"`
+	CreatedAt   time.Time         `json:"created_at"`
+	LastUsed    time.Time         `json:"last_used"`
 }
 
 type Config struct {
@@ -44,6 +46,12 @@ func NewStorage() (*Storage, error) {
 	}
 
 	configDirPath := filepath.Join(homeDir, configDir)
+	oldConfigDirPath := filepath.Join(homeDir, oldConfigDir)
+
+	if err := migrateOldConfig(oldConfigDirPath, configDirPath); err != nil {
+		fmt.Printf("Warning: Migration from .devscope failed: %v\n", err)
+	}
+
 	if err := os.MkdirAll(configDirPath, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
@@ -65,6 +73,35 @@ func NewStorage() (*Storage, error) {
 	}
 
 	return storage, nil
+}
+
+func migrateOldConfig(oldDir, newDir string) error {
+	oldConfigPath := filepath.Join(oldDir, configFile)
+	newConfigPath := filepath.Join(newDir, configFile)
+
+	if _, err := os.Stat(newConfigPath); err == nil {
+		return nil
+	}
+
+	if _, err := os.Stat(oldConfigPath); os.IsNotExist(err) {
+		return nil
+	}
+
+	if err := os.MkdirAll(newDir, 0755); err != nil {
+		return err
+	}
+
+	data, err := os.ReadFile(oldConfigPath)
+	if err != nil {
+		return err
+	}
+
+	if err := os.WriteFile(newConfigPath, data, 0644); err != nil {
+		return err
+	}
+
+	fmt.Println("✓ Successfully migrated config from ~/.devscope to ~/.godev")
+	return nil
 }
 
 func (s *Storage) load() error {
@@ -98,18 +135,19 @@ func (s *Storage) save() error {
 	return nil
 }
 
-func (s *Storage) SaveRequest(name, method, url string, headers map[string]string, body string) error {
+func (s *Storage) SaveRequest(name, method, url string, headers map[string]string, body string, queryParams map[string]string) error {
 	now := time.Now()
 
 	request := SavedRequest{
-		ID:        uuid.New().String(),
-		Name:      name,
-		Method:    method,
-		URL:       url,
-		Headers:   headers,
-		Body:      body,
-		CreatedAt: now,
-		LastUsed:  now,
+		ID:          uuid.New().String(),
+		Name:        name,
+		Method:      method,
+		URL:         url,
+		Headers:     headers,
+		Body:        body,
+		QueryParams: queryParams,
+		CreatedAt:   now,
+		LastUsed:    now,
 	}
 
 	s.config.Requests = append(s.config.Requests, request)
