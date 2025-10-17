@@ -530,16 +530,16 @@ func (m Model) handleHelpKeys(_ tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m *Model) validateURL(urlStr string) error {
 	if urlStr == "" {
-		return fmt.Errorf("URL cannot be empty")
+		return fmt.Errorf("url cannot be empty")
 	}
 
 	parsedURL, err := url.Parse(urlStr)
 	if err != nil {
-		return fmt.Errorf("invalid URL: %v", err)
+		return fmt.Errorf("invalid url: %v", err)
 	}
 
 	if parsedURL.Scheme == "" {
-		return fmt.Errorf("URL must include protocol (http:// or https://)")
+		return fmt.Errorf("url must include protocol (http:// or https://)")
 	}
 
 	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
@@ -547,7 +547,7 @@ func (m *Model) validateURL(urlStr string) error {
 	}
 
 	if parsedURL.Host == "" {
-		return fmt.Errorf("URL must include a valid host")
+		return fmt.Errorf("url must include a valid host")
 	}
 
 	return nil
@@ -560,7 +560,7 @@ func (m *Model) validateJSON(body string) error {
 
 	var js interface{}
 	if err := json.Unmarshal([]byte(body), &js); err != nil {
-		return fmt.Errorf("invalid JSON: %v", err)
+		return fmt.Errorf("invalid json: %v", err)
 	}
 	return nil
 }
