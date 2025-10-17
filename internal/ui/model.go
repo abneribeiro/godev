@@ -1,17 +1,21 @@
 package ui
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
+	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	httpclient "github.com/abneribeiro/devscope/internal/http"
-	"github.com/abneribeiro/devscope/internal/storage"
+	httpclient "github.com/abneribeiro/godev/internal/http"
+	"github.com/abneribeiro/godev/internal/storage"
 )
 
 type AppState int
@@ -23,6 +27,7 @@ const (
 	StateRequestList
 	StateHeaderEditor
 	StateBodyEditor
+	StateQueryEditor
 	StateHelp
 )
 
@@ -32,21 +37,20 @@ type Model struct {
 	height  int
 	storage *storage.Storage
 
-	method      string
-	urlInput    textinput.Model
-	headers     map[string]string
-	body        string
-	focusIndex  int
-	cursorPos   int
+	method     string
+	urlInput   textinput.Model
+	headers    map[string]string
+	body       string
+	focusIndex int
 
 	httpClient *httpclient.Client
 	response   *httpclient.Response
 	spinner    spinner.Model
 	loading    bool
 
-	savedRequests   []storage.SavedRequest
-	selectedReqIdx  int
-	scrollOffset    int
+	savedRequests  []storage.SavedRequest
+	selectedReqIdx int
+	scrollOffset   int
 
 	headerKeyInput   textinput.Model
 	headerValueInput textinput.Model
@@ -54,8 +58,34 @@ type Model struct {
 	selectedHeader   int
 	editingHeader    bool
 
+	bodyEditor  textarea.Model
+	editingBody bool
+	bodyError   string
+
+	queryParams     map[string]string
+	queryKeyInput   textinput.Model
+	queryValueInput textinput.Model
+	queryList       []string
+	selectedQuery   int
+	editingQuery    bool
+
+	viewResponseHeaders bool
+	responseScrollY     int
+
+	urlError              string
+	copySuccess           bool
+	copySuccessTimer      int
+	saveSuccess           bool
+	saveSuccessTimer      int
+	confirmingDelete      bool
+	requestToDelete       int
+	requestSaved          bool
+	currentRequestSavedID string
+
 	err error
 }
+
+type tickMsg time.Time
 
 type responseMsg httpclient.Response
 
@@ -76,11 +106,33 @@ func NewModel() *Model {
 	headerValue.CharLimit = 500
 	headerValue.Width = 50
 
+	queryKey := textinput.New()
+	queryKey.Placeholder = "Param Name"
+	queryKey.CharLimit = 100
+	queryKey.Width = 30
+
+	queryValue := textinput.New()
+	queryValue.Placeholder = "Param Value"
+	queryValue.CharLimit = 500
+	queryValue.Width = 50
+
+	bodyTextarea := textarea.New()
+	bodyTextarea.Placeholder = "{\n  \"key\": \"value\"\n}"
+	bodyTextarea.CharLimit = 10000
+	bodyTextarea.SetWidth(80)
+	bodyTextarea.SetHeight(10)
+
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = SpinnerStyle
 
-	store, err := storage.NewStorage()
+	store, storageErr := storage.NewStorage()
+	if storageErr != nil {
+		fmt.Printf("Warning: Failed to initialize storage: %v\n", storageErr)
+		fmt.Println("The application will continue but requests cannot be saved.")
+		fmt.Println("Press Enter to continue...")
+		fmt.Scanln()
+	}
 
 	m := &Model{
 		state:            StateRequestBuilder,
@@ -92,12 +144,25 @@ func NewModel() *Model {
 		httpClient:       httpclient.NewClient(30 * time.Second),
 		spinner:          s,
 		storage:          store,
-		err:              err,
+		err:              nil,
 		headerKeyInput:   headerKey,
 		headerValueInput: headerValue,
 		headerList:       []string{},
 		selectedHeader:   0,
 		editingHeader:    false,
+		bodyEditor:       bodyTextarea,
+		editingBody:      false,
+		queryParams:      make(map[string]string),
+		queryKeyInput:    queryKey,
+		queryValueInput:  queryValue,
+		queryList:        []string{},
+		selectedQuery:    0,
+		editingQuery:     false,
+		viewResponseHeaders: false,
+		responseScrollY:  0,
+		urlError:         "",
+		copySuccess:      false,
+		copySuccessTimer: 0,
 	}
 
 	if m.storage != nil {
@@ -108,7 +173,16 @@ func NewModel() *Model {
 }
 
 func (m Model) Init() tea.Cmd {
-	return textinput.Blink
+	return tea.Batch(
+		textinput.Blink,
+		tickCmd(),
+	)
+}
+
+func tickCmd() tea.Cmd {
+	return tea.Tick(time.Second, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -128,6 +202,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m.handleKeyPress(msg)
 			default:
 				m.urlInput, cmd = m.urlInput.Update(msg)
+				m.requestSaved = false
 				return m, cmd
 			}
 		}
@@ -153,6 +228,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.state = StateViewResponse
 		return m, nil
 
+	case tickMsg:
+		if m.copySuccessTimer > 0 {
+			m.copySuccessTimer--
+			if m.copySuccessTimer == 0 {
+				m.copySuccess = false
+			}
+		}
+		if m.saveSuccessTimer > 0 {
+			m.saveSuccessTimer--
+			if m.saveSuccessTimer == 0 {
+				m.saveSuccess = false
+			}
+		}
+		return m, tickCmd()
+
 	case spinner.TickMsg:
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
@@ -173,6 +263,8 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleHeaderEditorKeys(msg)
 	case StateBodyEditor:
 		return m.handleBodyEditorKeys(msg)
+	case StateQueryEditor:
+		return m.handleQueryEditorKeys(msg)
 	case StateHelp:
 		return m.handleHelpKeys(msg)
 	case StateLoading:
@@ -195,7 +287,7 @@ func (m Model) handleRequestBuilderKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "tab":
 		m.focusIndex++
-		if m.focusIndex > 5 {
+		if m.focusIndex > 7 {
 			m.focusIndex = 0
 		}
 
@@ -209,7 +301,7 @@ func (m Model) handleRequestBuilderKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "shift+tab":
 		m.focusIndex--
 		if m.focusIndex < 0 {
-			m.focusIndex = 5
+			m.focusIndex = 7
 		}
 
 		if m.focusIndex == 1 {
@@ -252,19 +344,31 @@ func (m Model) handleRequestBuilderKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case 0:
 			return m, nil
 		case 1:
-			return m, nil
-		case 2:
-			m.state = StateHeaderEditor
-			m.buildHeaderList()
-			return m, nil
-		case 3:
 			if m.urlInput.Value() != "" {
 				return m, m.sendRequest()
 			}
+			return m, nil
+		case 2:
+			m.state = StateQueryEditor
+			m.buildQueryList()
+			return m, nil
+		case 3:
+			m.state = StateHeaderEditor
+			m.buildHeaderList()
+			return m, nil
 		case 4:
-			m.state = StateRequestList
+			m.state = StateBodyEditor
+			m.bodyEditor.SetValue(m.body)
+			m.bodyEditor.Focus()
 			return m, nil
 		case 5:
+			if m.urlInput.Value() != "" {
+				return m, m.sendRequest()
+			}
+		case 6:
+			m.state = StateRequestList
+			return m, nil
+		case 7:
 			return m, tea.Quit
 		}
 		return m, nil
@@ -285,18 +389,40 @@ func (m Model) handleResponseViewKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "esc":
 		m.state = StateRequestBuilder
 		m.response = nil
+		m.viewResponseHeaders = false
 		return m, nil
 
 	case "s":
 		if m.storage != nil && m.response != nil {
 			name := fmt.Sprintf("%s %s", m.method, m.urlInput.Value())
 			if !m.storage.RequestExists(name) {
-				err := m.storage.SaveRequest(name, m.method, m.urlInput.Value(), m.headers, m.body)
+				err := m.storage.SaveRequest(name, m.method, m.urlInput.Value(), m.headers, m.body, m.queryParams)
 				if err == nil {
 					m.savedRequests = m.storage.GetRequests()
+					m.saveSuccess = true
+					m.saveSuccessTimer = 3
+					m.requestSaved = true
+					if len(m.savedRequests) > 0 {
+						m.currentRequestSavedID = m.savedRequests[len(m.savedRequests)-1].ID
+					}
 				}
 			}
 		}
+		return m, nil
+
+	case "c":
+		if m.response != nil && m.response.Error == nil {
+			err := clipboard.WriteAll(m.response.Body)
+			if err == nil {
+				m.copySuccess = true
+				m.copySuccessTimer = 3
+			}
+		}
+		return m, nil
+
+	case "h":
+		m.viewResponseHeaders = !m.viewResponseHeaders
+		m.scrollOffset = 0
 		return m, nil
 
 	case "up", "k":
@@ -319,6 +445,10 @@ func (m Model) handleRequestListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case "esc":
+		if m.confirmingDelete {
+			m.confirmingDelete = false
+			return m, nil
+		}
 		m.state = StateRequestBuilder
 		return m, nil
 
@@ -341,7 +471,14 @@ func (m Model) handleRequestListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.urlInput.SetValue(req.URL)
 			m.headers = req.Headers
 			m.body = req.Body
+			if req.QueryParams != nil {
+				m.queryParams = req.QueryParams
+			} else {
+				m.queryParams = make(map[string]string)
+			}
 			m.state = StateRequestBuilder
+			m.requestSaved = true
+			m.currentRequestSavedID = req.ID
 
 			if m.storage != nil {
 				m.storage.UpdateLastUsed(req.ID)
@@ -350,13 +487,27 @@ func (m Model) handleRequestListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "d":
-		if len(m.savedRequests) > 0 && m.selectedReqIdx < len(m.savedRequests) && m.storage != nil {
-			req := m.savedRequests[m.selectedReqIdx]
-			m.storage.DeleteRequest(req.ID)
-			m.savedRequests = m.storage.GetRequests()
-			if m.selectedReqIdx >= len(m.savedRequests) && m.selectedReqIdx > 0 {
-				m.selectedReqIdx--
+		if len(m.savedRequests) > 0 && m.selectedReqIdx < len(m.savedRequests) {
+			if !m.confirmingDelete {
+				m.confirmingDelete = true
+				m.requestToDelete = m.selectedReqIdx
+				return m, nil
 			}
+		}
+		return m, nil
+
+	case "y":
+		if m.confirmingDelete && m.storage != nil {
+			if m.requestToDelete < len(m.savedRequests) {
+				req := m.savedRequests[m.requestToDelete]
+				m.storage.DeleteRequest(req.ID)
+				m.savedRequests = m.storage.GetRequests()
+				if m.selectedReqIdx >= len(m.savedRequests) && m.selectedReqIdx > 0 {
+					m.selectedReqIdx--
+				}
+			}
+			m.confirmingDelete = false
+			return m, nil
 		}
 		return m, nil
 
@@ -372,22 +523,93 @@ func (m Model) handleRequestListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) handleHelpKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleHelpKeys(_ tea.KeyMsg) (tea.Model, tea.Cmd) {
 	m.state = StateRequestBuilder
 	return m, nil
 }
 
+func (m *Model) validateURL(urlStr string) error {
+	if urlStr == "" {
+		return fmt.Errorf("URL cannot be empty")
+	}
+
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %v", err)
+	}
+
+	if parsedURL.Scheme == "" {
+		return fmt.Errorf("URL must include protocol (http:// or https://)")
+	}
+
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return fmt.Errorf("protocol must be http or https")
+	}
+
+	if parsedURL.Host == "" {
+		return fmt.Errorf("URL must include a valid host")
+	}
+
+	return nil
+}
+
+func (m *Model) validateJSON(body string) error {
+	if body == "" {
+		return nil
+	}
+
+	var js interface{}
+	if err := json.Unmarshal([]byte(body), &js); err != nil {
+		return fmt.Errorf("invalid JSON: %v", err)
+	}
+	return nil
+}
+
+func (m *Model) buildURLWithQueryParams() string {
+	baseURL := m.urlInput.Value()
+	if len(m.queryParams) == 0 {
+		return baseURL
+	}
+
+	parsedURL, err := url.Parse(baseURL)
+	if err != nil {
+		return baseURL
+	}
+
+	q := parsedURL.Query()
+	for key, value := range m.queryParams {
+		q.Set(key, value)
+	}
+	parsedURL.RawQuery = q.Encode()
+
+	return parsedURL.String()
+}
+
 func (m Model) sendRequest() tea.Cmd {
+	urlStr := m.urlInput.Value()
+
+	if err := m.validateURL(urlStr); err != nil {
+		return func() tea.Msg {
+			resp := httpclient.Response{
+				Error: err,
+			}
+			return responseMsg(resp)
+		}
+	}
+
 	m.state = StateLoading
 	m.loading = true
 	m.scrollOffset = 0
+	m.urlError = ""
+
+	finalURL := m.buildURLWithQueryParams()
 
 	return tea.Batch(
 		m.spinner.Tick,
 		func() tea.Msg {
 			req := httpclient.Request{
 				Method:  m.method,
-				URL:     m.urlInput.Value(),
+				URL:     finalURL,
 				Headers: m.headers,
 				Body:    m.body,
 			}
@@ -415,6 +637,8 @@ func (m Model) View() string {
 		return m.viewHeaderEditor()
 	case StateBodyEditor:
 		return m.viewBodyEditor()
+	case StateQueryEditor:
+		return m.viewQueryEditor()
 	case StateHelp:
 		return m.viewHelp()
 	}
@@ -425,7 +649,11 @@ func (m Model) View() string {
 func (m Model) viewRequestBuilder() string {
 	var b strings.Builder
 
-	b.WriteString(TitleStyle.Render("DevScope v0.1.0"))
+	title := "GoDev v0.2.0"
+	if m.requestSaved {
+		title += " [SAVED]"
+	}
+	b.WriteString(TitleStyle.Render(title))
 	b.WriteString("\n\n")
 
 	methodLabel := "Method: "
@@ -461,24 +689,58 @@ func (m Model) viewRequestBuilder() string {
 			Render(inputView)
 		b.WriteString(styledInput)
 	}
-	b.WriteString("\n\n")
+	b.WriteString("\n")
+
+	if len(m.queryParams) > 0 {
+		finalURL := m.buildURLWithQueryParams()
+		b.WriteString(MutedStyle.Render(fmt.Sprintf("    → Final URL: %s", finalURL)))
+		b.WriteString("\n")
+	}
+	b.WriteString("\n")
+
+	queryCount := len(m.queryParams)
+	queryText := fmt.Sprintf("Query Params: (%d)", queryCount)
+	if m.focusIndex == 2 {
+		b.WriteString(ButtonActive.Render("[ " + queryText + " ]"))
+	} else {
+		b.WriteString(MutedStyle.Render(queryText))
+	}
+	b.WriteString("\n")
 
 	headersCount := len(m.headers)
 	headersText := fmt.Sprintf("Headers: (%d)", headersCount)
-	if m.focusIndex == 2 {
+	if m.focusIndex == 3 {
 		b.WriteString(ButtonActive.Render("[ " + headersText + " ]"))
 	} else {
 		b.WriteString(MutedStyle.Render(headersText))
 	}
-	b.WriteString("\n\n\n")
+	b.WriteString("\n")
 
-	buttons := RenderButton("Send Request", m.focusIndex == 3) + "  "
-	buttons += RenderButton("Load Saved", m.focusIndex == 4) + "  "
-	buttons += RenderButton("Quit", m.focusIndex == 5)
+	bodyPreview := "empty"
+	if m.body != "" {
+		bodyStr := strings.ReplaceAll(m.body, "\n", " ")
+		bodyStr = strings.TrimSpace(bodyStr)
+		if len(bodyStr) > 80 {
+			bodyPreview = bodyStr[:80] + "..."
+		} else {
+			bodyPreview = bodyStr
+		}
+	}
+	bodyText := fmt.Sprintf("Body: (%s)", bodyPreview)
+	if m.focusIndex == 4 {
+		b.WriteString(ButtonActive.Render("[ " + bodyText + " ]"))
+	} else {
+		b.WriteString(MutedStyle.Render(bodyText))
+	}
+	b.WriteString("\n\n")
+
+	buttons := RenderButton("Send Request", m.focusIndex == 5) + "  "
+	buttons += RenderButton("Load Saved", m.focusIndex == 6) + "  "
+	buttons += RenderButton("Quit", m.focusIndex == 7)
 	b.WriteString(buttons)
 
 	b.WriteString("\n\n")
-	b.WriteString(RenderFooter("Tab: next • Enter: action • Ctrl+Q: quit • Ctrl+?: help"))
+	b.WriteString(RenderFooter("Tab: next • Enter: action/send • Ctrl+Q: quit • Ctrl+L: load saved"))
 
 	return Center(m.width, m.height, b.String())
 }
@@ -513,12 +775,21 @@ func (m Model) viewResponse() string {
 
 	var b strings.Builder
 
-	b.WriteString(TitleStyle.Render("Response"))
+	title := "Response"
+	if m.viewResponseHeaders {
+		title = "Response Headers"
+	}
+	b.WriteString(TitleStyle.Render(title))
 	b.WriteString("\n\n")
 
-	requestInfo := fmt.Sprintf("%s %s", m.method, m.urlInput.Value())
+	requestInfo := fmt.Sprintf("%s %s", m.method, m.buildURLWithQueryParams())
 	b.WriteString(MutedStyle.Render(requestInfo))
 	b.WriteString("\n\n")
+
+	if m.saveSuccess {
+		b.WriteString(SuccessStyle.Render("✓ Request saved successfully!"))
+		b.WriteString("\n\n")
+	}
 
 	if m.response.Error != nil {
 		errorPanel := lipgloss.NewStyle().
@@ -537,8 +808,26 @@ func (m Model) viewResponse() string {
 		b.WriteString(statusStyle.Render(statusLine))
 		b.WriteString("\n\n")
 
-		maxLines := m.height - 15
-		lines := strings.Split(m.response.Body, "\n")
+		if m.copySuccess {
+			b.WriteString(SuccessStyle.Render("✓ Copied to clipboard!"))
+			b.WriteString("\n\n")
+		}
+
+		var content string
+		if m.viewResponseHeaders {
+			var headerLines []string
+			for key, values := range m.response.Headers {
+				for _, value := range values {
+					headerLines = append(headerLines, fmt.Sprintf("%-30s : %s", key, value))
+				}
+			}
+			content = strings.Join(headerLines, "\n")
+		} else {
+			content = m.response.Body
+		}
+
+		maxLines := m.height - 17
+		lines := strings.Split(content, "\n")
 		totalLines := len(lines)
 
 		start := m.scrollOffset
@@ -580,15 +869,20 @@ func (m Model) viewResponse() string {
 
 	b.WriteString("\n\n")
 
-	buttons := RenderButton("Back", true) + "  "
+	buttons := RenderButton("Back (Esc)", true) + "  "
 	buttons += RenderButton("Save (s)", false) + "  "
 	if m.response.Error == nil {
-		buttons += RenderButton("Copy", false)
+		buttons += RenderButton("Copy (c)", false) + "  "
+		if m.viewResponseHeaders {
+			buttons += RenderButton("Body (h)", false)
+		} else {
+			buttons += RenderButton("Headers (h)", false)
+		}
 	}
 	b.WriteString(buttons)
 
 	b.WriteString("\n\n")
-	b.WriteString(RenderFooter("Esc: back • s: save • ↑↓: scroll"))
+	b.WriteString(RenderFooter("Esc: back • s: save • c: copy • h: toggle headers • ↑↓: scroll"))
 
 	return Center(m.width, m.height, b.String())
 }
@@ -617,6 +911,13 @@ func (m Model) viewRequestList() string {
 	}
 
 	b.WriteString("\n\n")
+
+	if m.confirmingDelete && len(m.savedRequests) > 0 && m.requestToDelete < len(m.savedRequests) {
+		confirmMsg := fmt.Sprintf("⚠ Delete '%s'? Press 'y' to confirm, 'Esc' to cancel", m.savedRequests[m.requestToDelete].Name)
+		b.WriteString(WarningStyle.Render(confirmMsg))
+		b.WriteString("\n\n")
+	}
+
 	b.WriteString(RenderFooter("↑↓: navigate • Enter: load • d: delete • n: new • Esc: back"))
 
 	return Center(m.width, m.height, b.String())
@@ -625,7 +926,7 @@ func (m Model) viewRequestList() string {
 func (m Model) viewHelp() string {
 	var b strings.Builder
 
-	b.WriteString(TitleStyle.Render("DevScope - Help"))
+	b.WriteString(TitleStyle.Render("GoDev - Help"))
 	b.WriteString("\n\n")
 
 	b.WriteString(HeaderStyle.Render("Global Shortcuts:"))
