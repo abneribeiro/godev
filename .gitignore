@@ -5,6 +5,7 @@
 *.so
 *.dylib
 devscope
+godev
 
 # Test binary, built with `go test -c`
 *.test
@@ -29,5 +30,6 @@ go.work
 .DS_Store
 Thumbs.db
 
-# DevScope config (para desenvolvimento)
+# Config directories (for development)
 .devscope/
+.godev/
