@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,8 +15,23 @@ const (
 	oldConfigDir = ".devscope"
 	configDir    = ".godev"
 	configFile   = "config.json"
-	version      = "0.2.0"
+	version      = "0.4.0"
 )
+
+type RequestExecution struct {
+	ID           string              `json:"id"`
+	Timestamp    time.Time           `json:"timestamp"`
+	Method       string              `json:"method"`
+	URL          string              `json:"url"`
+	Headers      map[string]string   `json:"headers"`
+	Body         string              `json:"body"`
+	QueryParams  map[string]string   `json:"query_params"`
+	StatusCode   int                 `json:"status_code"`
+	Status       string              `json:"status"`
+	ResponseBody string              `json:"response_body"`
+	ResponseTime int64               `json:"response_time_ms"`
+	Error        string              `json:"error,omitempty"`
+}
 
 type SavedRequest struct {
 	ID          string            `json:"id"`
@@ -30,8 +46,9 @@ type SavedRequest struct {
 }
 
 type Config struct {
-	Version  string          `json:"version"`
-	Requests []SavedRequest  `json:"requests"`
+	Version  string             `json:"version"`
+	Requests []SavedRequest     `json:"requests"`
+	History  []RequestExecution `json:"history"`
 }
 
 type Storage struct {
@@ -66,10 +83,15 @@ func NewStorage() (*Storage, error) {
 		storage.config = &Config{
 			Version:  version,
 			Requests: []SavedRequest{},
+			History:  []RequestExecution{},
 		}
 		if err := storage.save(); err != nil {
 			return nil, fmt.Errorf("failed to initialize config: %w", err)
 		}
+	}
+
+	if storage.config.History == nil {
+		storage.config.History = []RequestExecution{}
 	}
 
 	return storage, nil
@@ -194,4 +216,72 @@ func (s *Storage) RequestExists(name string) bool {
 		}
 	}
 	return false
+}
+
+const maxHistorySize = 100
+
+func (s *Storage) AddToHistory(method, url string, headers map[string]string, body string, queryParams map[string]string, statusCode int, status, responseBody string, responseTimeMs int64, err error) error {
+	execution := RequestExecution{
+		ID:           uuid.New().String(),
+		Timestamp:    time.Now(),
+		Method:       method,
+		URL:          url,
+		Headers:      headers,
+		Body:         body,
+		QueryParams:  queryParams,
+		StatusCode:   statusCode,
+		Status:       status,
+		ResponseBody: responseBody,
+		ResponseTime: responseTimeMs,
+	}
+
+	if err != nil {
+		execution.Error = err.Error()
+	}
+
+	s.config.History = append([]RequestExecution{execution}, s.config.History...)
+
+	if len(s.config.History) > maxHistorySize {
+		s.config.History = s.config.History[:maxHistorySize]
+	}
+
+	return s.save()
+}
+
+func (s *Storage) GetHistory() []RequestExecution {
+	return s.config.History
+}
+
+func (s *Storage) ClearHistory() error {
+	s.config.History = []RequestExecution{}
+	return s.save()
+}
+
+func (s *Storage) DeleteHistoryItem(id string) error {
+	for i := range s.config.History {
+		if s.config.History[i].ID == id {
+			s.config.History = append(s.config.History[:i], s.config.History[i+1:]...)
+			return s.save()
+		}
+	}
+	return fmt.Errorf("history item not found: %s", id)
+}
+
+func (s *Storage) FilterRequests(query string) []SavedRequest {
+	if query == "" {
+		return s.config.Requests
+	}
+
+	query = strings.ToLower(query)
+	filtered := []SavedRequest{}
+
+	for _, req := range s.config.Requests {
+		if strings.Contains(strings.ToLower(req.Name), query) ||
+			strings.Contains(strings.ToLower(req.Method), query) ||
+			strings.Contains(strings.ToLower(req.URL), query) {
+			filtered = append(filtered, req)
+		}
+	}
+
+	return filtered
 }
