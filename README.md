@@ -7,6 +7,13 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 
+
+<div align="center">
+
+   https://github.com/user-attachments/assets/00f50690-7c5b-4665-993f-85faf8e25efb
+
+</div>
+
 ## Overview
 
 **GoDev** is a modern, terminal-based alternative to Postman and Insomnia, designed for developers who live in the command line. Built with Go and the elegant Bubbletea framework, it provides a fast, keyboard-driven interface for testing HTTP APIs and managing PostgreSQL databases.
