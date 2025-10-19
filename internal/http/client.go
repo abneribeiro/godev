@@ -132,3 +132,34 @@ func FormatDuration(d time.Duration) string {
 	}
 	return fmt.Sprintf("%.2fs", d.Seconds())
 }
+
+func RequestToCurl(req Request) string {
+	var parts []string
+
+	parts = append(parts, "curl")
+
+	parts = append(parts, fmt.Sprintf("'%s'", req.URL))
+
+	if req.Method != "GET" {
+		parts = append(parts, "-X", req.Method)
+	}
+
+	for key, value := range req.Headers {
+		parts = append(parts, "-H", fmt.Sprintf("'%s: %s'", key, value))
+	}
+
+	if req.Body != "" {
+		escapedBody := req.Body
+		parts = append(parts, "-d", fmt.Sprintf("'%s'", escapedBody))
+	}
+
+	return joinCurlParts(parts)
+}
+
+func joinCurlParts(parts []string) string {
+	result := parts[0]
+	for i := 1; i < len(parts); i++ {
+		result += " \\\n  " + parts[i]
+	}
+	return result
+}
