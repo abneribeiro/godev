@@ -5,6 +5,93 @@ All notable changes to GoDev will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-10-19
+
+### Added
+
+- **PostgreSQL Database Support**: Full database integration
+  - Connect to PostgreSQL databases
+  - SQL query editor with syntax highlighting
+  - Execute SELECT, INSERT, UPDATE, DELETE queries
+  - Schema viewer (tables, columns, types)
+  - Save favorite queries
+  - Query execution history (last 100)
+  - Export results to CSV/JSON
+  - Multiple saved connections
+  - Database mode accessible via Ctrl+D or F5
+
+- **Environment Variables**: Complete environment management
+  - Multiple environments (dev, staging, prod, etc.)
+  - CRUD operations for variables
+  - Template syntax `{{VARIABLE}}` in URLs, headers, and body
+  - Automatic substitution on request send
+  - Active environment indicator in title
+  - Persistent storage in `~/.godev/environments.json`
+
+- **Home Screen**: Initial mode selection interface
+  - Choose between API Testing and Database modes
+  - Clean navigation with visual indicators
+  - F-key shortcuts displayed
+
+- **F-Key Shortcuts**: Standardized quick navigation
+  - F1 / ?: Help screen
+  - F2: Send request / Execute query
+  - F3: Load saved requests
+  - F4: Request history
+  - F5: Database mode / Execute SQL
+  - F6: Environment variables
+
+- **Request History**: Complete execution tracking
+  - Stores last 100 request executions
+  - Full request details (method, URL, headers, body, query params)
+  - Response data (status, body, execution time)
+  - Error tracking
+  - Load request from history
+  - Delete individual executions
+  - Clear all history (with confirmation)
+
+- **Search and Filter**: Real-time search for saved requests
+  - Filter by name, method, or URL
+  - Case-insensitive search
+  - Visual feedback for results
+  - Preserved functionality (load, delete) on filtered lists
+
+- **cURL Export**: Export requests as cURL commands
+  - Multi-line formatted output
+  - Automatic clipboard copy
+  - All HTTP methods supported
+  - Headers and body included
+
+- **Table Component**: Data display for database results
+  - Dynamic column sizing
+  - Scrollable rows
+  - Formatted headers
+  - Visual separators
+
+### Changed
+
+- **UI Organization**: Complete state machine refactor
+  - Added 12 new states (Database modes, Environments, History, etc.)
+  - Standardized F-key navigation across all modes
+  - Consistent visual design between API and Database modes
+
+- **Enhanced Metrics**: Request and query execution metrics
+  - Response time in milliseconds
+  - Body size formatting (KB, MB)
+  - Rows affected for database operations
+
+- **Improved Storage**: Multiple configuration files
+  - `~/.godev/config.json` - HTTP requests
+  - `~/.godev/database.json` - Database queries and connections
+  - `~/.godev/environments.json` - Environment variables
+
+### Technical
+
+- **Dependencies**: Added PostgreSQL driver (`github.com/lib/pq`)
+- **Architecture**: Modular design with separate database and storage layers
+- **Code Size**: ~3000 lines added across all components
+- **State Machine**: Expanded from 8 to 20+ states
+
 ## [0.2.0] - 2025-10-17
 
 ### Added
