@@ -2,17 +2,18 @@
 
 > A lightweight, terminal-based HTTP API inspector and testing tool
 
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/abneribeiro/godev/releases)
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/abneribeiro/godev/releases)
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.21-00ADD8.svg)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 
 ## Overview
 
-**GoDev** is a modern, terminal-based alternative to Postman and Insomnia, designed for developers who live in the command line. Built with Go and the elegant Bubbletea framework, it provides a fast, keyboard-driven interface for testing and debugging HTTP APIs.
+**GoDev** is a modern, terminal-based alternative to Postman and Insomnia, designed for developers who live in the command line. Built with Go and the elegant Bubbletea framework, it provides a fast, keyboard-driven interface for testing HTTP APIs and managing PostgreSQL databases.
 
 ### Key Features
 
+#### HTTP API Testing
 - **Full HTTP Support** - GET, POST, PUT, DELETE, PATCH methods
 - **Request Builder** - Intuitive TUI for building API requests
 - **Header Management** - Add, edit, and delete custom headers
@@ -20,9 +21,31 @@
 - **JSON Body Editor** - Built-in validation and syntax support
 - **Response Viewer** - Formatted JSON with syntax highlighting
 - **Request Persistence** - Save and reload frequently used requests
+- **Request History** - Track last 100 executions with full details
+- **Search & Filter** - Find saved requests instantly
+- **cURL Export** - Copy requests as cURL commands
+
+#### PostgreSQL Database
+- **Database Connections** - Connect to PostgreSQL databases
+- **SQL Query Editor** - Execute queries with syntax highlighting
+- **Result Viewer** - Formatted table display with scroll
+- **Query Management** - Save and organize frequently used queries
+- **Query History** - Track last 100 executions
+- **Connection Persistence** - Save database configurations
+
+#### Environment Variables
+- **Multiple Environments** - Create dev, staging, prod configurations
+- **Variable Management** - Define reusable variables (API_URL, API_KEY, etc)
+- **Template Syntax** - Use {{VARIABLE}} in URLs, headers, and body
+- **Active Environment** - Switch between environments instantly
+- **Visual Indicator** - See active environment in request builder
+
+#### General
 - **Visual Feedback** - Confirmation messages for all operations
-- **Clipboard Integration** - Copy responses with a single keystroke
+- **Clipboard Integration** - Copy responses and commands
 - **Offline-First** - No telemetry, all data stored locally
+- **Keyboard-Driven** - Fast navigation with F-keys and shortcuts
+- **Home Screen** - Choose between API or Database mode at startup
 
 ## Installation
 
@@ -104,51 +127,147 @@ go build -o godev
 5. URL automatically updates: https://api.example.com?page=1
 ```
 
+### Using Database Features
+
+#### Connecting to PostgreSQL
+
+```
+1. Press Ctrl+D to enter Database mode
+2. Press 'c' to open connection form
+3. Fill in:
+   - Host: localhost
+   - Port: 5432
+   - Database: your_database
+   - User: postgres
+   - Password: your_password
+4. Press Enter to connect
+```
+
+#### Executing SQL Queries
+
+```
+1. From Database menu, press 'q' for Query Editor
+2. Write your SQL:
+   SELECT * FROM users LIMIT 10;
+3. Press F5 to execute
+4. View results in formatted table
+5. Press Ctrl+S to save query for later
+```
+
+#### Managing Saved Queries
+
+```
+1. From Database menu, press 'l' for Saved Queries
+2. Navigate with ↑↓
+3. Press Enter to load query in editor
+4. Press 'd' to delete
+```
+
+### Using Environment Variables
+
+#### Creating Environments
+
+```
+1. Press F6 from API mode to open Environment Variables
+2. Press 'n' to create new environment
+3. Enter name: dev, staging, or prod
+4. Press Ctrl+S to save
+```
+
+#### Adding Variables
+
+```
+1. Select environment and press Enter
+2. Press 'n' to add variable
+3. Key: API_URL
+4. Value: https://api.dev.example.com
+5. Press Tab, then Enter to save
+```
+
+#### Using Variables in Requests
+
+```
+1. Set environment as active (press 's' on selected environment)
+2. In request builder, use template syntax:
+   - URL: {{API_URL}}/users
+   - Headers: Authorization: Bearer {{API_TOKEN}}
+   - Body: {"endpoint": "{{API_URL}}"}
+3. Variables are replaced automatically when sending request
+4. Active environment shown in title: [ENV: dev]
+```
+
 ## Keyboard Shortcuts
 
-### Navigation
+### Global Navigation
 | Key | Action |
 |-----|--------|
+| `F1` / `?` | Show help |
+| `Ctrl+Q` | Quit application |
+| `Ctrl+C` | Cancel/Quit |
+| `Esc` | Back/Cancel |
 | `Tab` | Next field |
-| `Shift+Tab` | Previous field |
-| `↑↓` / `j k` | Navigate lists |
-| `←→` | Change HTTP method |
+| `↑↓` | Navigate lists |
 
-### Actions
+### API Mode (Function Keys)
 | Key | Action |
 |-----|--------|
-| `Enter` | Send request / Select item |
-| `Ctrl+L` | Load saved requests |
-| `Ctrl+H` | Edit headers |
-| `Ctrl+B` | Edit body |
-| `Ctrl+Q` | Edit query parameters |
+| `F1` | Help |
+| `F2` | Send request |
+| `F3` | Load saved requests |
+| `F4` | Request history |
+| `F5` | Database mode |
+| `F6` | Environment variables |
+
+### API Mode (Letter Keys)
+| Key | Action |
+|-----|--------|
+| `h` | Edit headers |
+| `b` | Edit body |
+| `q` | Edit query parameters |
 | `s` | Save current request |
-| `c` | Copy response to clipboard |
-| `?` | Show help |
+| `x` | Copy request as cURL |
+| `c` | Copy response |
+| `/` | Search (in lists) |
 
-### Editors
+### Database Mode
 | Key | Action |
 |-----|--------|
-| `n` / `a` | Add new item |
-| `e` | Edit selected item |
-| `d` | Delete (with confirmation) |
-| `Esc` | Exit editor |
-| `Ctrl+S` | Save & validate (body editor) |
+| `c` | Connect to database |
+| `q` | Query editor |
+| `l` | Saved queries |
+| `d` | Disconnect |
+| `F5` | Execute query |
+| `Ctrl+S` | Save query |
+
+### Environment Variables
+| Key | Action |
+|-----|--------|
+| `n` | New environment/variable |
+| `Enter` | Edit environment |
+| `s` | Set as active |
+| `d` | Delete |
+| `e` | Edit variable |
+| `Esc` | Back |
 
 ## Configuration
 
 ### Storage Location
 
-All saved requests are stored in:
+All data is stored locally in `~/.godev/`:
 ```
-~/.godev/config.json
+~/.godev/
+├── config.json         # HTTP requests and history
+├── database.json       # Database queries and connections
+├── environments.json   # Environment variables
+└── exports/            # Exported query results
 ```
 
 ### Data Structure
 
+**config.json** (HTTP):
 ```json
 {
-  "version": "0.2.0",
+  "version": "0.4.0",
   "requests": [
     {
       "id": "uuid",
@@ -158,10 +277,78 @@ All saved requests are stored in:
       "headers": {"Authorization": "Bearer token"},
       "body": "{\"key\": \"value\"}",
       "query_params": {"page": "1", "limit": "10"},
-      "created_at": "2025-10-17T...",
-      "last_used": "2025-10-17T..."
+      "created_at": "2025-10-18T...",
+      "last_used": "2025-10-18T..."
+    }
+  ],
+  "history": [
+    {
+      "id": "uuid",
+      "timestamp": "2025-10-18T...",
+      "method": "GET",
+      "url": "https://api.example.com",
+      "status_code": 200,
+      "response_time_ms": 145
     }
   ]
+}
+```
+
+**database.json** (PostgreSQL):
+```json
+{
+  "version": "0.4.0",
+  "saved_queries": [
+    {
+      "id": "uuid",
+      "name": "Get Users",
+      "query": "SELECT * FROM users LIMIT 10",
+      "created_at": "2025-10-18T...",
+      "last_used": "2025-10-18T..."
+    }
+  ],
+  "query_history": [
+    {
+      "id": "uuid",
+      "timestamp": "2025-10-18T...",
+      "query": "SELECT COUNT(*) FROM users",
+      "rows_affected": 1,
+      "execution_time_ms": 23
+    }
+  ],
+  "saved_connections": [
+    {
+      "host": "localhost",
+      "port": 5432,
+      "database": "mydb",
+      "user": "postgres",
+      "sslmode": "disable"
+    }
+  ]
+}
+```
+
+**environments.json** (Environment Variables):
+```json
+{
+  "version": "0.4.0",
+  "environments": [
+    {
+      "name": "dev",
+      "variables": [
+        {"key": "API_URL", "value": "https://api.dev.example.com"},
+        {"key": "API_TOKEN", "value": "dev_token_123"}
+      ]
+    },
+    {
+      "name": "prod",
+      "variables": [
+        {"key": "API_URL", "value": "https://api.example.com"},
+        {"key": "API_TOKEN", "value": "prod_token_456"}
+      ]
+    }
+  ],
+  "active_environment": "dev"
 }
 ```
 
@@ -195,30 +382,32 @@ godev/
 
 ## Roadmap
 
-### v0.2.0 (Current)
-- [x] HTTP method support (GET, POST, PUT, DELETE, PATCH)
-- [x] Header editor with CRUD operations
-- [x] Query parameters with persistence
-- [x] JSON body editor with validation
-- [x] Response viewer with syntax highlighting
-- [x] Request persistence and loading
-- [x] Visual feedback system
-- [x] Delete confirmation dialogs
-- [x] Automatic config migration
-
-### v0.3.0
-- [ ] Export requests to cURL commands
+### v0.4.0 (Current)
+- [x] Home screen with mode selection (API/Database)
+- [x] Standardized keyboard shortcuts (F-keys)
+- [x] Environment variables support
+- [x] Multiple environments (dev/staging/prod)
+- [x] Variable template syntax {{VAR}}
+- [x] Active environment indicator
+- [x] F5 key for query execution
 - [ ] Import cURL commands as requests
-- [ ] Search and filter saved requests
 - [ ] Custom color themes
-- [ ] Request history tracking
+- [ ] Request collections/folders
 
-### v0.4.0
-- [ ] Environment variables support
+### v0.5.0 (Planned)
 - [ ] Request chaining (use response in next request)
+- [ ] Multiple database connections UI
+- [ ] Transaction support (BEGIN/COMMIT/ROLLBACK)
+- [ ] Query templates
+- [ ] SQL autocomplete
 - [ ] GraphQL support
+
+### v0.6.0 (Planned)
 - [ ] WebSocket inspector
-- [ ] Response time metrics
+- [ ] Response time metrics and charts
+- [ ] Export/Import collections
+- [ ] Team sharing features
+- [ ] Custom themes and color schemes
 
 ### v1.0.0
 - [ ] Performance benchmarking
