@@ -208,7 +208,7 @@ func TestTableRendererNumericAlignment(t *testing.T) {
 func TestTableRendererMismatchedColumns(t *testing.T) {
 	columns := []string{"ID", "Name", "Email"}
 	rows := [][]string{
-		{"1", "Alice"},                    // Missing email
+		{"1", "Alice"},                           // Missing email
 		{"2", "Bob", "bob@example.com", "extra"}, // Extra column
 	}
 

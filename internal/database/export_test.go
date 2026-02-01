@@ -122,7 +122,7 @@ func TestExportToCSV(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to stat file: %v", err)
 	}
-	if info.Mode().Perm() != 0600 {
+	if info.Mode().Perm() != 0o600 {
 		t.Errorf("File permissions = %o, want 0600", info.Mode().Perm())
 	}
 
@@ -177,7 +177,7 @@ func TestExportToJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to stat file: %v", err)
 	}
-	if info.Mode().Perm() != 0600 {
+	if info.Mode().Perm() != 0o600 {
 		t.Errorf("File permissions = %o, want 0600", info.Mode().Perm())
 	}
 
@@ -223,7 +223,7 @@ func TestExportToSQL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to stat file: %v", err)
 	}
-	if info.Mode().Perm() != 0600 {
+	if info.Mode().Perm() != 0o600 {
 		t.Errorf("File permissions = %o, want 0600", info.Mode().Perm())
 	}
 

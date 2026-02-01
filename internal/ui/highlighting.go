@@ -15,16 +15,16 @@ type SyntaxHighlighter struct {
 
 // HighlightTheme defines colors for syntax highlighting
 type HighlightTheme struct {
-	Keyword    lipgloss.Style
-	String     lipgloss.Style
-	Number     lipgloss.Style
-	Comment    lipgloss.Style
-	Function   lipgloss.Style
-	Operator   lipgloss.Style
-	Type       lipgloss.Style
-	Variable   lipgloss.Style
-	Property   lipgloss.Style
-	Error      lipgloss.Style
+	Keyword  lipgloss.Style
+	String   lipgloss.Style
+	Number   lipgloss.Style
+	Comment  lipgloss.Style
+	Function lipgloss.Style
+	Operator lipgloss.Style
+	Type     lipgloss.Style
+	Variable lipgloss.Style
+	Property lipgloss.Style
+	Error    lipgloss.Style
 }
 
 // DefaultDarkTheme returns a default dark theme for syntax highlighting
@@ -323,10 +323,10 @@ func HighlightDiff(diff string) string {
 	lines := strings.Split(diff, "\n")
 	var result []string
 
-	addedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("114")) // Green
-	removedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196")) // Red
+	addedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("114"))    // Green
+	removedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196"))  // Red
 	modifiedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("221")) // Yellow
-	headerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("111")) // Blue
+	headerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("111"))   // Blue
 
 	for _, line := range lines {
 		if strings.HasPrefix(line, "+") {

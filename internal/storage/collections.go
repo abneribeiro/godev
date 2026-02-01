@@ -12,13 +12,13 @@ import (
 
 // Collection represents a folder/group of saved requests
 type Collection struct {
-	ID          string          `json:"id"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	CreatedAt   time.Time       `json:"created_at"`
-	UpdatedAt   time.Time       `json:"updated_at"`
-	Requests    []SavedRequest  `json:"requests"`
-	SubCollections []Collection `json:"sub_collections,omitempty"`
+	ID             string         `json:"id"`
+	Name           string         `json:"name"`
+	Description    string         `json:"description"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	Requests       []SavedRequest `json:"requests"`
+	SubCollections []Collection   `json:"sub_collections,omitempty"`
 }
 
 // CollectionConfig holds all collections
@@ -76,7 +76,7 @@ func (s *Storage) SaveCollections(config *CollectionConfig) error {
 	}
 
 	// Use secure file permissions (0600 - only owner can read/write)
-	if err := os.WriteFile(collectionsPath, data, 0600); err != nil {
+	if err := os.WriteFile(collectionsPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write collections file: %w", err)
 	}
 
@@ -136,15 +136,15 @@ func FindCollectionByID(collections []Collection, id string) *Collection {
 
 // ImportPostmanCollection imports a Postman collection format
 type PostmanRequest struct {
-	Name    string                 `json:"name"`
+	Name    string                `json:"name"`
 	Request PostmanRequestDetails `json:"request"`
 }
 
 type PostmanRequestDetails struct {
-	Method string                   `json:"method"`
-	URL    PostmanURL              `json:"url"`
-	Header []PostmanHeader         `json:"header"`
-	Body   PostmanBody             `json:"body,omitempty"`
+	Method string          `json:"method"`
+	URL    PostmanURL      `json:"url"`
+	Header []PostmanHeader `json:"header"`
+	Body   PostmanBody     `json:"body,omitempty"`
 }
 
 type PostmanURL struct {

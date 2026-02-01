@@ -16,8 +16,8 @@ type DiffResult struct {
 
 // ValueDiff represents a difference in a single value
 type ValueDiff struct {
-	Old    string
-	New    string
+	Old     string
+	New     string
 	Changed bool
 }
 
@@ -38,9 +38,9 @@ type Change struct {
 
 // TimeDiff represents difference in response times
 type TimeDiff struct {
-	OldMs      int64
-	NewMs      int64
-	DiffMs     int64
+	OldMs       int64
+	NewMs       int64
+	DiffMs      int64
 	DiffPercent float64
 }
 

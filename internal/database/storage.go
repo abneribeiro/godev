@@ -20,13 +20,13 @@ type SavedQuery struct {
 }
 
 type QueryExecution struct {
-	ID             string        `json:"id"`
-	Timestamp      time.Time     `json:"timestamp"`
-	Query          string        `json:"query"`
-	RowsAffected   int64         `json:"rows_affected"`
-	ExecutionTime  int64         `json:"execution_time_ms"`
-	Error          string        `json:"error,omitempty"`
-	ConnectionInfo string        `json:"connection_info"`
+	ID             string    `json:"id"`
+	Timestamp      time.Time `json:"timestamp"`
+	Query          string    `json:"query"`
+	RowsAffected   int64     `json:"rows_affected"`
+	ExecutionTime  int64     `json:"execution_time_ms"`
+	Error          string    `json:"error,omitempty"`
+	ConnectionInfo string    `json:"connection_info"`
 }
 
 type DatabaseConfig struct {
@@ -55,7 +55,7 @@ func NewDatabaseStorage() (*DatabaseStorage, error) {
 
 	configDirPath := filepath.Join(homeDir, ".godev")
 	// Use secure directory permissions (0700 - only owner can access)
-	if err := os.MkdirAll(configDirPath, 0700); err != nil {
+	if err := os.MkdirAll(configDirPath, 0o700); err != nil {
 		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -116,7 +116,7 @@ func (s *DatabaseStorage) save() error {
 
 	// Use secure file permissions (0600 - only owner can read/write)
 	// This is critical as the file may contain database passwords
-	if err := os.WriteFile(s.configPath, data, 0600); err != nil {
+	if err := os.WriteFile(s.configPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write database config file: %w", err)
 	}
 

@@ -7,34 +7,34 @@ import (
 
 // QueryBuilder provides a fluent API for building SQL queries
 type QueryBuilder struct {
-	queryType    string // SELECT, INSERT, UPDATE, DELETE
-	table        string
-	columns      []string
+	queryType       string // SELECT, INSERT, UPDATE, DELETE
+	table           string
+	columns         []string
 	whereConditions []WhereCondition
-	joins        []JoinClause
-	orderBy      []OrderByClause
-	groupBy      []string
-	having       []WhereCondition
-	limit        int
-	offset       int
-	values       map[string]interface{}
-	updates      map[string]interface{}
+	joins           []JoinClause
+	orderBy         []OrderByClause
+	groupBy         []string
+	having          []WhereCondition
+	limit           int
+	offset          int
+	values          map[string]interface{}
+	updates         map[string]interface{}
 }
 
 // WhereCondition represents a WHERE clause condition
 type WhereCondition struct {
-	Column   string
-	Operator string // =, !=, <, >, <=, >=, LIKE, IN, IS NULL, IS NOT NULL
-	Value    interface{}
+	Column    string
+	Operator  string // =, !=, <, >, <=, >=, LIKE, IN, IS NULL, IS NOT NULL
+	Value     interface{}
 	LogicalOp string // AND, OR
 }
 
 // JoinClause represents a JOIN operation
 type JoinClause struct {
-	Type       string // INNER, LEFT, RIGHT, FULL
-	Table      string
-	OnLeft     string // Left side of ON condition (this_table.column)
-	OnRight    string // Right side of ON condition (joined_table.column)
+	Type    string // INNER, LEFT, RIGHT, FULL
+	Table   string
+	OnLeft  string // Left side of ON condition (this_table.column)
+	OnRight string // Right side of ON condition (joined_table.column)
 }
 
 // OrderByClause represents an ORDER BY clause
@@ -46,14 +46,14 @@ type OrderByClause struct {
 // NewQueryBuilder creates a new query builder
 func NewQueryBuilder() *QueryBuilder {
 	return &QueryBuilder{
-		columns:      []string{},
+		columns:         []string{},
 		whereConditions: []WhereCondition{},
-		joins:        []JoinClause{},
-		orderBy:      []OrderByClause{},
-		groupBy:      []string{},
-		having:       []WhereCondition{},
-		values:       make(map[string]interface{}),
-		updates:      make(map[string]interface{}),
+		joins:           []JoinClause{},
+		orderBy:         []OrderByClause{},
+		groupBy:         []string{},
+		having:          []WhereCondition{},
+		values:          make(map[string]interface{}),
+		updates:         make(map[string]interface{}),
 	}
 }
 

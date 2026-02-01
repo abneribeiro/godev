@@ -100,58 +100,58 @@ type Model struct {
 	requestSaved          bool
 	currentRequestSavedID string
 
-	history              []storage.RequestExecution
-	selectedHistoryIdx   int
-	historyScrollOffset  int
+	history                []storage.RequestExecution
+	selectedHistoryIdx     int
+	historyScrollOffset    int
 	confirmingClearHistory bool
 
-	dbClient                *database.PostgresClient
-	dbStorage               *database.DatabaseStorage
-	dbConnectHostInput      textinput.Model
-	dbConnectPortInput      textinput.Model
-	dbConnectDatabaseInput  textinput.Model
-	dbConnectUserInput      textinput.Model
-	dbConnectPasswordInput  textinput.Model
-	dbConnectFocusIndex     int
-	dbQueryEditor           textarea.Model
-	dbQueryResult           *database.QueryResult
-	dbSavedQueries          []database.SavedQuery
-	dbSelectedQueryIdx      int
-	dbMode                  string
-	dbTables                []string
-	dbSelectedTableIdx      int
-	dbTableInfo             *database.TableInfo
-	dbQuerySaveSuccess           bool
-	dbQuerySaveSuccessTimer      int
-	dbConnectSuccess             bool
-	dbConnectSuccessTimer        int
-	dbQueryHistory               []database.QueryExecution
-	dbSelectedQueryHistoryIdx    int
+	dbClient                      *database.PostgresClient
+	dbStorage                     *database.DatabaseStorage
+	dbConnectHostInput            textinput.Model
+	dbConnectPortInput            textinput.Model
+	dbConnectDatabaseInput        textinput.Model
+	dbConnectUserInput            textinput.Model
+	dbConnectPasswordInput        textinput.Model
+	dbConnectFocusIndex           int
+	dbQueryEditor                 textarea.Model
+	dbQueryResult                 *database.QueryResult
+	dbSavedQueries                []database.SavedQuery
+	dbSelectedQueryIdx            int
+	dbMode                        string
+	dbTables                      []string
+	dbSelectedTableIdx            int
+	dbTableInfo                   *database.TableInfo
+	dbQuerySaveSuccess            bool
+	dbQuerySaveSuccessTimer       int
+	dbConnectSuccess              bool
+	dbConnectSuccessTimer         int
+	dbQueryHistory                []database.QueryExecution
+	dbSelectedQueryHistoryIdx     int
 	dbConfirmingClearQueryHistory bool
-	dbExportFormatIdx            int
-	dbExportTableName            textinput.Model
-	dbExportSuccess              bool
-	dbExportSuccessTimer         int
-	dbExportFilePath             string
+	dbExportFormatIdx             int
+	dbExportTableName             textinput.Model
+	dbExportSuccess               bool
+	dbExportSuccessTimer          int
+	dbExportFilePath              string
 
-	envConfig               *storage.EnvironmentConfig
-	envList                 []storage.Environment
-	selectedEnvIdx          int
-	envScrollOffset         int
-	envNameInput            textinput.Model
-	envVarKeyInput          textinput.Model
-	envVarValueInput        textinput.Model
-	envVarList              []storage.Variable
-	selectedEnvVarIdx       int
-	editingEnvVar           bool
-	envFocusIndex           int
-	envSaveSuccess          bool
-	envSaveSuccessTimer     int
-	envDeleteSuccess        bool
-	envDeleteSuccessTimer   int
-	currentEnvName          string
-	confirmingDeleteEnv     bool
-	confirmingDeleteEnvVar  bool
+	envConfig              *storage.EnvironmentConfig
+	envList                []storage.Environment
+	selectedEnvIdx         int
+	envScrollOffset        int
+	envNameInput           textinput.Model
+	envVarKeyInput         textinput.Model
+	envVarValueInput       textinput.Model
+	envVarList             []storage.Variable
+	selectedEnvVarIdx      int
+	editingEnvVar          bool
+	envFocusIndex          int
+	envSaveSuccess         bool
+	envSaveSuccessTimer    int
+	envDeleteSuccess       bool
+	envDeleteSuccessTimer  int
+	currentEnvName         string
+	confirmingDeleteEnv    bool
+	confirmingDeleteEnvVar bool
 	// envVarToDelete          int
 
 	err error
@@ -285,33 +285,33 @@ func NewModel() *Model {
 	dbClient := database.NewPostgresClient()
 
 	m := &Model{
-		state:               StateHome,
-		method:              "GET",
-		urlInput:            ti,
-		headers:             make(map[string]string),
-		body:                "",
-		focusIndex:          1,
-		httpClient:          httpclient.NewClient(30 * time.Second),
-		spinner:             s,
-		storage:             store,
-		err:                 nil,
-		headerKeyInput:      headerKey,
-		headerValueInput:    headerValue,
-		headerList:          []string{},
-		selectedHeader:      0,
-		editingHeader:       false,
-		bodyEditor:          bodyTextarea,
-		editingBody:         false,
-		queryParams:         make(map[string]string),
-		queryKeyInput:       queryKey,
-		queryValueInput:     queryValue,
-		queryList:           []string{},
-		selectedQuery:       0,
-		editingQuery:        false,
-		viewResponseHeaders: false,
-		responseScrollY:     0,
-		urlError:            "",
-		copySuccess:         false,
+		state:                  StateHome,
+		method:                 "GET",
+		urlInput:               ti,
+		headers:                make(map[string]string),
+		body:                   "",
+		focusIndex:             1,
+		httpClient:             httpclient.NewClient(30 * time.Second),
+		spinner:                s,
+		storage:                store,
+		err:                    nil,
+		headerKeyInput:         headerKey,
+		headerValueInput:       headerValue,
+		headerList:             []string{},
+		selectedHeader:         0,
+		editingHeader:          false,
+		bodyEditor:             bodyTextarea,
+		editingBody:            false,
+		queryParams:            make(map[string]string),
+		queryKeyInput:          queryKey,
+		queryValueInput:        queryValue,
+		queryList:              []string{},
+		selectedQuery:          0,
+		editingQuery:           false,
+		viewResponseHeaders:    false,
+		responseScrollY:        0,
+		urlError:               "",
+		copySuccess:            false,
 		copySuccessTimer:       0,
 		searchInput:            searchInput,
 		searchActive:           false,
@@ -1393,9 +1393,9 @@ func (m Model) viewRequestBuilder() string {
 	methodLabel := "Method: "
 	methodSection := methodLabel
 	if m.focusIndex == 0 {
-		methodSection = TextStyle.Render(methodLabel) + ButtonActive.Render("[ " + m.method + " ▾ ]")
+		methodSection = TextStyle.Render(methodLabel) + ButtonActive.Render("[ "+m.method+" ▾ ]")
 	} else {
-		methodSection = MutedStyle.Render(methodLabel) + TextStyle.Render(m.method + " ▾")
+		methodSection = MutedStyle.Render(methodLabel) + TextStyle.Render(m.method+" ▾")
 	}
 	b.WriteString(methodSection)
 	b.WriteString("\n\n")

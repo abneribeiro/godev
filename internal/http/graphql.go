@@ -15,8 +15,8 @@ type GraphQLRequest struct {
 
 // GraphQLResponse represents a GraphQL response
 type GraphQLResponse struct {
-	Data   interface{}            `json:"data,omitempty"`
-	Errors []GraphQLError         `json:"errors,omitempty"`
+	Data       interface{}            `json:"data,omitempty"`
+	Errors     []GraphQLError         `json:"errors,omitempty"`
 	Extensions map[string]interface{} `json:"extensions,omitempty"`
 }
 
@@ -36,23 +36,23 @@ type GraphQLLocation struct {
 
 // GraphQLSchema represents a GraphQL schema from introspection
 type GraphQLSchema struct {
-	QueryType        *GraphQLType   `json:"queryType"`
-	MutationType     *GraphQLType   `json:"mutationType,omitempty"`
-	SubscriptionType *GraphQLType   `json:"subscriptionType,omitempty"`
-	Types            []GraphQLType  `json:"types"`
+	QueryType        *GraphQLType       `json:"queryType"`
+	MutationType     *GraphQLType       `json:"mutationType,omitempty"`
+	SubscriptionType *GraphQLType       `json:"subscriptionType,omitempty"`
+	Types            []GraphQLType      `json:"types"`
 	Directives       []GraphQLDirective `json:"directives"`
 }
 
 // GraphQLType represents a GraphQL type
 type GraphQLType struct {
-	Kind        string             `json:"kind"`
-	Name        string             `json:"name"`
-	Description string             `json:"description,omitempty"`
-	Fields      []GraphQLField     `json:"fields,omitempty"`
-	InputFields []GraphQLInputValue `json:"inputFields,omitempty"`
-	Interfaces  []GraphQLTypeRef   `json:"interfaces,omitempty"`
-	EnumValues  []GraphQLEnumValue `json:"enumValues,omitempty"`
-	PossibleTypes []GraphQLTypeRef `json:"possibleTypes,omitempty"`
+	Kind          string              `json:"kind"`
+	Name          string              `json:"name"`
+	Description   string              `json:"description,omitempty"`
+	Fields        []GraphQLField      `json:"fields,omitempty"`
+	InputFields   []GraphQLInputValue `json:"inputFields,omitempty"`
+	Interfaces    []GraphQLTypeRef    `json:"interfaces,omitempty"`
+	EnumValues    []GraphQLEnumValue  `json:"enumValues,omitempty"`
+	PossibleTypes []GraphQLTypeRef    `json:"possibleTypes,omitempty"`
 }
 
 // GraphQLField represents a field in a GraphQL type

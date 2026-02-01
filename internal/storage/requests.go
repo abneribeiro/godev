@@ -19,18 +19,18 @@ const (
 )
 
 type RequestExecution struct {
-	ID           string              `json:"id"`
-	Timestamp    time.Time           `json:"timestamp"`
-	Method       string              `json:"method"`
-	URL          string              `json:"url"`
-	Headers      map[string]string   `json:"headers"`
-	Body         string              `json:"body"`
-	QueryParams  map[string]string   `json:"query_params"`
-	StatusCode   int                 `json:"status_code"`
-	Status       string              `json:"status"`
-	ResponseBody string              `json:"response_body"`
-	ResponseTime int64               `json:"response_time_ms"`
-	Error        string              `json:"error,omitempty"`
+	ID           string            `json:"id"`
+	Timestamp    time.Time         `json:"timestamp"`
+	Method       string            `json:"method"`
+	URL          string            `json:"url"`
+	Headers      map[string]string `json:"headers"`
+	Body         string            `json:"body"`
+	QueryParams  map[string]string `json:"query_params"`
+	StatusCode   int               `json:"status_code"`
+	Status       string            `json:"status"`
+	ResponseBody string            `json:"response_body"`
+	ResponseTime int64             `json:"response_time_ms"`
+	Error        string            `json:"error,omitempty"`
 }
 
 type SavedRequest struct {
@@ -70,7 +70,7 @@ func NewStorage() (*Storage, error) {
 	}
 
 	// Use secure directory permissions (0700 - only owner can access)
-	if err := os.MkdirAll(configDirPath, 0700); err != nil {
+	if err := os.MkdirAll(configDirPath, 0o700); err != nil {
 		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -111,7 +111,7 @@ func migrateOldConfig(oldDir, newDir string) error {
 	}
 
 	// Use secure directory permissions
-	if err := os.MkdirAll(newDir, 0700); err != nil {
+	if err := os.MkdirAll(newDir, 0o700); err != nil {
 		return err
 	}
 
@@ -121,7 +121,7 @@ func migrateOldConfig(oldDir, newDir string) error {
 	}
 
 	// Use secure file permissions during migration
-	if err := os.WriteFile(newConfigPath, data, 0600); err != nil {
+	if err := os.WriteFile(newConfigPath, data, 0o600); err != nil {
 		return err
 	}
 
@@ -155,7 +155,7 @@ func (s *Storage) save() error {
 
 	// Use secure file permissions (0600 - only owner can read/write)
 	// This is critical as the file may contain API tokens and sensitive data
-	if err := os.WriteFile(s.configPath, data, 0600); err != nil {
+	if err := os.WriteFile(s.configPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 

@@ -395,7 +395,7 @@ func TestParseJSONPath(t *testing.T) {
 		expected int // number of parts
 	}{
 		{"data.user.id", 3},
-		{"items[0].name", 3}, // items, [0], name
+		{"items[0].name", 3},    // items, [0], name
 		{"data.items[1].id", 4}, // data, items, [1], id
 		{"simple", 1},
 	}

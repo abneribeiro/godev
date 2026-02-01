@@ -10,7 +10,6 @@ func TestQueryBuilderSelect(t *testing.T) {
 	query, err := qb.Select("id", "name", "email").
 		From("users").
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -24,7 +23,6 @@ func TestQueryBuilderSelect(t *testing.T) {
 func TestQueryBuilderSelectAll(t *testing.T) {
 	qb := NewQueryBuilder()
 	query, err := qb.Select().From("users").Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -41,7 +39,6 @@ func TestQueryBuilderWhere(t *testing.T) {
 		Where("age", ">", 18).
 		Where("active", "=", true).
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -70,7 +67,6 @@ func TestQueryBuilderOrWhere(t *testing.T) {
 		Where("role", "=", "admin").
 		OrWhere("role", "=", "moderator").
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -90,7 +86,6 @@ func TestQueryBuilderWhereNull(t *testing.T) {
 		From("users").
 		WhereNull("deleted_at").
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -106,7 +101,6 @@ func TestQueryBuilderWhereNotNull(t *testing.T) {
 		From("users").
 		WhereNotNull("email").
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -122,7 +116,6 @@ func TestQueryBuilderWhereIn(t *testing.T) {
 		From("users").
 		WhereIn("id", []interface{}{1, 2, 3}).
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -138,7 +131,6 @@ func TestQueryBuilderJoin(t *testing.T) {
 		From("users").
 		Join("orders", "users.id", "orders.user_id").
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -158,7 +150,6 @@ func TestQueryBuilderLeftJoin(t *testing.T) {
 		From("users").
 		LeftJoin("profiles", "users.id", "profiles.user_id").
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -175,7 +166,6 @@ func TestQueryBuilderOrderBy(t *testing.T) {
 		OrderBy("name", "ASC").
 		OrderBy("created_at", "DESC").
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -199,7 +189,6 @@ func TestQueryBuilderGroupBy(t *testing.T) {
 		From("orders").
 		GroupBy("status").
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -216,7 +205,6 @@ func TestQueryBuilderHaving(t *testing.T) {
 		GroupBy("status").
 		Having("COUNT(*)", ">", 10).
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -232,7 +220,6 @@ func TestQueryBuilderLimit(t *testing.T) {
 		From("users").
 		Limit(10).
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -249,7 +236,6 @@ func TestQueryBuilderOffset(t *testing.T) {
 		Limit(10).
 		Offset(20).
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -268,7 +254,6 @@ func TestQueryBuilderInsert(t *testing.T) {
 			"age":   30,
 		}).
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -302,7 +287,6 @@ func TestQueryBuilderUpdate(t *testing.T) {
 		Set("age", 25).
 		Where("id", "=", 1).
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -334,7 +318,6 @@ func TestQueryBuilderDelete(t *testing.T) {
 		From("users").
 		Where("inactive", "=", true).
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}
@@ -360,7 +343,6 @@ func TestQueryBuilderComplexQuery(t *testing.T) {
 		OrderBy("order_count", "DESC").
 		Limit(10).
 		Build()
-
 	if err != nil {
 		t.Fatalf("Build failed: %v", err)
 	}

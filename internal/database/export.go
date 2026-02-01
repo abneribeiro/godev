@@ -37,7 +37,7 @@ func ExportQueryResult(result *QueryResult, format ExportFormat, tableName strin
 
 	exportDir := filepath.Join(homeDir, ".godev", "exports")
 	// Use secure directory permissions (0700 - only owner can access)
-	if err := os.MkdirAll(exportDir, 0700); err != nil {
+	if err := os.MkdirAll(exportDir, 0o700); err != nil {
 		return ExportResult{Error: fmt.Errorf("failed to create export directory: %w", err)}
 	}
 
@@ -74,7 +74,7 @@ func ExportQueryResult(result *QueryResult, format ExportFormat, tableName strin
 
 func exportToCSV(filePath string, result *QueryResult, tableName string) error {
 	// Create file with secure permissions (0600 - only owner can read/write)
-	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 	if err != nil {
 		return fmt.Errorf("failed to create CSV file: %w", err)
 	}
@@ -115,7 +115,7 @@ func exportToJSON(filePath string, result *QueryResult, tableName string) error 
 	}
 
 	// Use secure file permissions (0600 - only owner can read/write)
-	if err := os.WriteFile(filePath, data, 0600); err != nil {
+	if err := os.WriteFile(filePath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write JSON file: %w", err)
 	}
 
@@ -182,7 +182,7 @@ func exportToSQL(filePath string, result *QueryResult, tableName string) error {
 	}
 
 	// Use secure file permissions (0600 - only owner can read/write)
-	if err := os.WriteFile(filePath, []byte(sql.String()), 0600); err != nil {
+	if err := os.WriteFile(filePath, []byte(sql.String()), 0o600); err != nil {
 		return fmt.Errorf("failed to write SQL file: %w", err)
 	}
 

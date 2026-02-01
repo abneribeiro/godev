@@ -126,7 +126,7 @@ func GetBuiltInTemplates() []RequestTemplate {
 			Method:      "GET",
 			URL:         "{{API_URL}}/protected",
 			Headers: map[string]string{
-				"Accept":  "application/json",
+				"Accept":    "application/json",
 				"X-API-Key": "{{API_KEY}}",
 			},
 			Body:        "",

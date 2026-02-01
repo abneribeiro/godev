@@ -13,15 +13,15 @@ type SchemaInfo struct {
 
 // TableMetadata represents detailed table information
 type TableMetadata struct {
-	Name          string
-	Schema        string
-	Columns       []ColumnMetadata
-	PrimaryKeys   []string
-	ForeignKeys   []ForeignKeyMetadata
-	Indexes       []IndexMetadata
-	Constraints   []ConstraintMetadata
-	RowCount      int64
-	TableSize     string
+	Name        string
+	Schema      string
+	Columns     []ColumnMetadata
+	PrimaryKeys []string
+	ForeignKeys []ForeignKeyMetadata
+	Indexes     []IndexMetadata
+	Constraints []ConstraintMetadata
+	RowCount    int64
+	TableSize   string
 }
 
 // ColumnMetadata represents detailed column information
@@ -67,13 +67,13 @@ type ConstraintMetadata struct {
 
 // ForeignKeyRelationship represents a relationship between tables
 type ForeignKeyRelationship struct {
-	FromTable     string
-	FromColumn    string
-	ToTable       string
-	ToColumn      string
-	Constraint    string
-	OnDelete      string
-	OnUpdate      string
+	FromTable  string
+	FromColumn string
+	ToTable    string
+	ToColumn   string
+	Constraint string
+	OnDelete   string
+	OnUpdate   string
 }
 
 // GetTableMetadata retrieves detailed metadata for a table

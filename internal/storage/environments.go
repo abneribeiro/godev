@@ -73,7 +73,7 @@ func (s *Storage) SaveEnvironments(config *EnvironmentConfig) error {
 
 	configDir := filepath.Join(homeDir, ".godev")
 	// Use secure directory permissions (0700 - only owner can access)
-	if err := os.MkdirAll(configDir, 0700); err != nil {
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -86,7 +86,7 @@ func (s *Storage) SaveEnvironments(config *EnvironmentConfig) error {
 
 	// Use secure file permissions (0600 - only owner can read/write)
 	// This is critical as the file contains API keys and sensitive environment variables
-	if err := os.WriteFile(envPath, data, 0600); err != nil {
+	if err := os.WriteFile(envPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write environment config: %w", err)
 	}
 

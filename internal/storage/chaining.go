@@ -9,10 +9,10 @@ import (
 
 // ChainedRequest represents a request that can extract variables from response
 type ChainedRequest struct {
-	Request        SavedRequest       `json:"request"`
-	Extractions    []VariableExtract  `json:"extractions"`
-	Assertions     []ResponseAssertion `json:"assertions,omitempty"`
-	NextRequestID  string             `json:"next_request_id,omitempty"`
+	Request       SavedRequest        `json:"request"`
+	Extractions   []VariableExtract   `json:"extractions"`
+	Assertions    []ResponseAssertion `json:"assertions,omitempty"`
+	NextRequestID string              `json:"next_request_id,omitempty"`
 }
 
 // VariableExtract defines how to extract a variable from response
@@ -140,7 +140,8 @@ type pathPart struct {
 
 // parseJSONPath parses a JSON path into parts
 // Examples: "data.user.id" -> [{data}, {user}, {id}]
-//          "items[0].name" -> [{items}, {[0]}, {name}]
+//
+//	"items[0].name" -> [{items}, {[0]}, {name}]
 func parseJSONPath(path string) []pathPart {
 	var parts []pathPart
 

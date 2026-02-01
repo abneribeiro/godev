@@ -146,7 +146,7 @@ func TestStorageSaveEnvironments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to stat file: %v", err)
 	}
-	if info.Mode().Perm() != 0600 {
+	if info.Mode().Perm() != 0o600 {
 		t.Errorf("File permissions = %o, want 0600", info.Mode().Perm())
 	}
 

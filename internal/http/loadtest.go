@@ -9,27 +9,27 @@ import (
 
 // LoadTestConfig defines parameters for load testing
 type LoadTestConfig struct {
-	Request     Request       // The request to test
-	Concurrency int           // Number of concurrent workers
-	TotalRequests int         // Total number of requests to send
-	Duration    time.Duration // Alternative: run for specified duration (0 = use TotalRequests)
-	RampUpTime  time.Duration // Time to gradually increase to full concurrency
+	Request       Request       // The request to test
+	Concurrency   int           // Number of concurrent workers
+	TotalRequests int           // Total number of requests to send
+	Duration      time.Duration // Alternative: run for specified duration (0 = use TotalRequests)
+	RampUpTime    time.Duration // Time to gradually increase to full concurrency
 }
 
 // LoadTestResult contains aggregated results from load test
 type LoadTestResult struct {
-	TotalRequests     int
+	TotalRequests      int
 	SuccessfulRequests int
-	FailedRequests    int
-	TotalDuration     time.Duration
+	FailedRequests     int
+	TotalDuration      time.Duration
 
 	// Response times
-	MinResponseTime   time.Duration
-	MaxResponseTime   time.Duration
-	AvgResponseTime   time.Duration
+	MinResponseTime    time.Duration
+	MaxResponseTime    time.Duration
+	AvgResponseTime    time.Duration
 	MedianResponseTime time.Duration
-	P95ResponseTime   time.Duration
-	P99ResponseTime   time.Duration
+	P95ResponseTime    time.Duration
+	P99ResponseTime    time.Duration
 
 	// Status codes
 	StatusCodes map[int]int
@@ -65,8 +65,8 @@ func RunLoadTest(client *Client, config LoadTestConfig, progressCallback func(co
 	startTime := time.Now()
 
 	results := &LoadTestResult{
-		StatusCodes: make(map[int]int),
-		Errors:      make(map[string]int),
+		StatusCodes:       make(map[int]int),
+		Errors:            make(map[string]int),
 		IndividualResults: []LoadTestRequestResult{},
 	}
 

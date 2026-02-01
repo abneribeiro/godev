@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package integration
@@ -451,7 +452,7 @@ func TestStorageDirectoryPermissions(t *testing.T) {
 	}
 
 	perm := info.Mode().Perm()
-	expected := os.FileMode(0700)
+	expected := os.FileMode(0o700)
 	if perm != expected {
 		t.Errorf("Expected directory permissions %o, got %o", expected, perm)
 	}
@@ -464,7 +465,7 @@ func TestStorageDirectoryPermissions(t *testing.T) {
 	}
 
 	filePerm := fileInfo.Mode().Perm()
-	expectedFile := os.FileMode(0600)
+	expectedFile := os.FileMode(0o600)
 	if filePerm != expectedFile {
 		t.Errorf("Expected file permissions %o, got %o", expectedFile, filePerm)
 	}
