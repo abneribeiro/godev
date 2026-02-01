@@ -1,13 +1,17 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
+
+	"github.com/abneribeiro/godev/internal/errors"
 )
 
 const (
@@ -86,31 +90,46 @@ func NewPostgresClient() *PostgresClient {
 }
 
 func (c *PostgresClient) Connect(config ConnectionConfig) error {
+	return c.ConnectWithContext(context.Background(), config)
+}
+
+func (c *PostgresClient) ConnectWithContext(ctx context.Context, config ConnectionConfig) error {
+	logger := slog.With("host", config.Host, "port", config.Port, "database", config.Database)
+
 	// Validate configuration before attempting connection
 	if err := config.Validate(); err != nil {
-		return fmt.Errorf("invalid configuration: %w", err)
+		logger.Error("Invalid database configuration", "error", err)
+		return errors.NewDatabaseError("invalid configuration", err)
 	}
 
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		config.Host, config.Port, config.User, config.Password, config.Database, config.SSLMode)
 
+	logger.Debug("Opening database connection")
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		return fmt.Errorf("failed to open connection: %w", err)
+		logger.Error("Failed to open database connection", "error", err)
+		return errors.NewDatabaseError("failed to open connection", err)
 	}
 
-	// Set connection pool limits
+	// Set connection pool limits for production use
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
-	if err := db.Ping(); err != nil {
+	// Test the connection with context
+	pingCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	if err := db.PingContext(pingCtx); err != nil {
 		db.Close()
-		return fmt.Errorf("failed to ping database: %w", err)
+		logger.Error("Failed to ping database", "error", err)
+		return errors.NewDatabaseError("failed to ping database", err)
 	}
 
 	c.db = db
 	c.config = config
+	logger.Info("Database connection established successfully")
 	return nil
 }
 

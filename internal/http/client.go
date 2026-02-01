@@ -2,12 +2,16 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/abneribeiro/godev/internal/errors"
 )
 
 const (
@@ -45,20 +49,27 @@ func NewClient(timeout time.Duration) *Client {
 }
 
 func (c *Client) Send(req Request) Response {
+	return c.SendWithContext(context.Background(), req)
+}
+
+func (c *Client) SendWithContext(ctx context.Context, req Request) Response {
 	startTime := time.Now()
+	logger := slog.With("method", req.Method, "url", req.URL)
 
 	// Validate URL before sending
 	if _, err := url.ParseRequestURI(req.URL); err != nil {
+		logger.Error("Invalid URL", "error", err)
 		return Response{
-			Error:        fmt.Errorf("invalid URL: %w", err),
+			Error:        errors.NewHTTPError("invalid URL", err),
 			ResponseTime: time.Since(startTime),
 		}
 	}
 
-	httpReq, err := http.NewRequest(req.Method, req.URL, bytes.NewBufferString(req.Body))
+	httpReq, err := http.NewRequestWithContext(ctx, req.Method, req.URL, bytes.NewBufferString(req.Body))
 	if err != nil {
+		logger.Error("Failed to create request", "error", err)
 		return Response{
-			Error:        fmt.Errorf("failed to create request: %w", err),
+			Error:        errors.NewHTTPError("failed to create request", err),
 			ResponseTime: time.Since(startTime),
 		}
 	}
@@ -67,10 +78,12 @@ func (c *Client) Send(req Request) Response {
 		httpReq.Header.Set(key, value)
 	}
 
+	logger.Debug("Sending HTTP request")
 	httpResp, err := c.httpClient.Do(httpReq)
 	if err != nil {
+		logger.Error("Request failed", "error", err)
 		return Response{
-			Error:        fmt.Errorf("request failed: %w", err),
+			Error:        errors.NewHTTPError("request failed", err),
 			ResponseTime: time.Since(startTime),
 		}
 	}
@@ -81,16 +94,19 @@ func (c *Client) Send(req Request) Response {
 	limitedReader := io.LimitReader(httpResp.Body, MaxResponseSize+1)
 	bodyBytes, err := io.ReadAll(limitedReader)
 	if err != nil {
+		logger.Error("Failed to read response body", "error", err)
 		return Response{
-			Error:        fmt.Errorf("failed to read response body: %w", err),
+			Error:        errors.NewHTTPError("failed to read response body", err),
 			ResponseTime: time.Since(startTime),
 		}
 	}
 
 	// Check if response was truncated (read more than MaxResponseSize)
 	if int64(len(bodyBytes)) > MaxResponseSize {
+		err := fmt.Errorf("response too large (exceeds %d bytes)", MaxResponseSize)
+		logger.Warn("Response too large", "max_size", MaxResponseSize, "actual_size", len(bodyBytes))
 		return Response{
-			Error:        fmt.Errorf("response too large (exceeds %d bytes)", MaxResponseSize),
+			Error:        errors.NewHTTPError("response too large", err),
 			ResponseTime: time.Since(startTime),
 		}
 	}
@@ -102,6 +118,12 @@ func (c *Client) Send(req Request) Response {
 	if err == nil {
 		bodyString = formattedBody
 	}
+
+	logger.Info("Request completed successfully",
+		"status_code", httpResp.StatusCode,
+		"response_time", responseTime,
+		"response_size", len(bodyBytes),
+	)
 
 	return Response{
 		StatusCode:   httpResp.StatusCode,
