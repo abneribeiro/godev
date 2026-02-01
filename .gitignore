@@ -34,3 +34,10 @@ Thumbs.db
 # Config directories (for development)
 .devscope/
 .godev/
+
+# Logs and coverage
+*.log
+coverage.out
+
+# Environment variables
+.env*
