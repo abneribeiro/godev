@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/atotto/clipboard"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -48,7 +49,9 @@ type Model struct {
 	state   AppState
 	width   int
 	height  int
+	layout  LayoutConfig
 	storage *storage.Storage
+	keymap  KeyMap
 
 	method     string
 	urlInput   textinput.Model
@@ -115,6 +118,7 @@ type Model struct {
 	dbConnectFocusIndex           int
 	dbQueryEditor                 textarea.Model
 	dbQueryResult                 *database.QueryResult
+	dbResultTable                 *BubblesTableWrapper
 	dbSavedQueries                []database.SavedQuery
 	dbSelectedQueryIdx            int
 	dbMode                        string
@@ -286,6 +290,10 @@ func NewModel() *Model {
 
 	m := &Model{
 		state:                  StateHome,
+		width:                  80,  // Default width
+		height:                 24,  // Default height
+		layout:                 NewLayoutConfig(80, 24),
+		keymap:                 DefaultKeyMap(),
 		method:                 "GET",
 		urlInput:               ti,
 		headers:                make(map[string]string),
@@ -396,14 +404,46 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		inputWidth := m.width - 20
-		if inputWidth < 40 {
-			inputWidth = 40
+
+		// Update responsive layout configuration
+		m.layout = NewLayoutConfig(m.width, m.height)
+
+		// Update input field widths based on new layout
+		m.urlInput.Width = m.layout.InputWidth
+
+		// Update other input fields
+		m.searchInput.Width = m.layout.InputWidth
+		m.headerKeyInput.Width = m.layout.InputWidth / 2
+		m.headerValueInput.Width = m.layout.InputWidth / 2
+		m.queryKeyInput.Width = m.layout.InputWidth / 2
+		m.queryValueInput.Width = m.layout.InputWidth / 2
+
+		// Update database-related input widths
+		m.dbConnectHostInput.Width = m.layout.InputWidth / 2
+		m.dbConnectPortInput.Width = m.layout.InputWidth / 4
+		m.dbConnectDatabaseInput.Width = m.layout.InputWidth / 2
+		m.dbConnectUserInput.Width = m.layout.InputWidth / 2
+		m.dbConnectPasswordInput.Width = m.layout.InputWidth / 2
+
+		// Update environment input widths
+		m.envNameInput.Width = m.layout.InputWidth
+		m.envVarKeyInput.Width = m.layout.InputWidth / 2
+		m.envVarValueInput.Width = m.layout.InputWidth / 2
+
+		// Update table dimensions if we have a table
+		if m.dbResultTable != nil {
+			tableWidth, tableHeight := m.layout.GetTableDimensions()
+			// Recreate table with new dimensions
+			if m.dbQueryResult != nil && len(m.dbQueryResult.Columns) > 0 {
+				m.dbResultTable = NewBubblesTableWrapper(
+					m.dbQueryResult.Columns,
+					m.dbQueryResult.Rows,
+					tableWidth,
+					tableHeight,
+				)
+			}
 		}
-		if inputWidth > 100 {
-			inputWidth = 100
-		}
-		m.urlInput.Width = inputWidth
+
 		return m, nil
 
 	case responseMsg:
@@ -490,6 +530,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = false
 		result := database.QueryResult(msg)
 		m.dbQueryResult = &result
+
+		// Create table wrapper if we have columns and data
+		if len(result.Columns) > 0 && len(result.Rows) > 0 {
+			tableWidth, tableHeight := m.layout.GetTableDimensions()
+			m.dbResultTable = NewBubblesTableWrapper(
+				result.Columns,
+				result.Rows,
+				tableWidth,
+				tableHeight,
+			)
+		} else {
+			m.dbResultTable = nil
+		}
 
 		if m.dbStorage != nil {
 			query := strings.TrimSpace(m.dbQueryEditor.Value())
@@ -2315,16 +2368,76 @@ func (m Model) viewDatabaseQueryEditor() string {
 }
 
 func (m Model) handleDatabaseResultKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "ctrl+c", "ctrl+q":
+	// Handle global keys first
+	if key.Matches(msg, m.keymap.Quit) {
 		return m, tea.Quit
+	}
 
-	case "esc":
+	if key.Matches(msg, m.keymap.Back) {
 		m.state = StateDatabaseQueryEditor
 		m.dbQueryEditor.Focus()
 		return m, nil
+	}
 
-	case "s":
+	// Handle pagination controls
+	if key.Matches(msg, m.keymap.Left, m.keymap.VimLeft) {
+		if m.dbResultTable != nil && m.dbResultTable.CanPageUp() {
+			m.dbResultTable.PrevPage()
+		}
+		return m, nil
+	}
+
+	if key.Matches(msg, m.keymap.Right, m.keymap.VimRight) {
+		if m.dbResultTable != nil && m.dbResultTable.CanPageDown() {
+			m.dbResultTable.NextPage()
+		}
+		return m, nil
+	}
+
+	// Handle additional navigation for large datasets
+	if key.Matches(msg, m.keymap.Home) {
+		if m.dbResultTable != nil {
+			m.dbResultTable.FirstPage()
+		}
+		return m, nil
+	}
+
+	if key.Matches(msg, m.keymap.End) {
+		if m.dbResultTable != nil {
+			m.dbResultTable.LastPage()
+		}
+		return m, nil
+	}
+
+	if key.Matches(msg, m.keymap.PageUp) {
+		if m.dbResultTable != nil {
+			// Jump multiple pages for large datasets
+			currentPage := m.dbResultTable.GetCurrentPage()
+			targetPage := currentPage - 5
+			if targetPage < 0 {
+				targetPage = 0
+			}
+			m.dbResultTable.JumpToPage(targetPage)
+		}
+		return m, nil
+	}
+
+	if key.Matches(msg, m.keymap.PageDown) {
+		if m.dbResultTable != nil {
+			// Jump multiple pages for large datasets
+			currentPage := m.dbResultTable.GetCurrentPage()
+			totalPages := m.dbResultTable.GetTotalPages()
+			targetPage := currentPage + 5
+			if targetPage >= totalPages {
+				targetPage = totalPages - 1
+			}
+			m.dbResultTable.JumpToPage(targetPage)
+		}
+		return m, nil
+	}
+
+	// Handle database-specific actions
+	if key.Matches(msg, m.keymap.SaveQuery) {
 		query := strings.TrimSpace(m.dbQueryEditor.Value())
 		if query == "" || m.dbStorage == nil {
 			return m, nil
@@ -2338,8 +2451,9 @@ func (m Model) handleDatabaseResultKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.dbQuerySaveSuccessTimer = 3
 		}
 		return m, nil
+	}
 
-	case "e":
+	if key.Matches(msg, m.keymap.ExportResults) {
 		if m.dbQueryResult != nil && len(m.dbQueryResult.Columns) > 0 {
 			m.state = StateDatabaseExport
 			m.dbExportFormatIdx = 0
@@ -2356,20 +2470,17 @@ func (m Model) handleDatabaseResultKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m Model) viewDatabaseResult() string {
 	var b strings.Builder
 
-	b.WriteString(TitleStyle.Render("Query Result"))
+	b.WriteString(GetResponsiveTitleStyle(m.layout).Render("Query Result"))
 	b.WriteString("\n\n")
 
 	if m.dbQueryResult == nil {
 		b.WriteString(MutedStyle.Render("No result"))
-		return Center(m.width, m.height, b.String())
+		return CenterResponsive(m.layout, b.String())
 	}
 
 	if m.dbQueryResult.Error != nil {
-		errorPanel := lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
+		errorPanel := GetResponsivePanelStyle(m.layout).
 			BorderForeground(lipgloss.Color(ColorError)).
-			Padding(1, 2).
-			Width(m.width - 10).
 			Render(ErrorStyle.Render(fmt.Sprintf("Error: %v", m.dbQueryResult.Error)))
 
 		b.WriteString(errorPanel)
@@ -2379,27 +2490,74 @@ func (m Model) viewDatabaseResult() string {
 		b.WriteString("\n\n")
 
 		if len(m.dbQueryResult.Columns) > 0 {
-			maxRows := 20
-			rowsToShow := m.dbQueryResult.Rows
-			if len(rowsToShow) > maxRows {
-				rowsToShow = rowsToShow[:maxRows]
+			// Create or update the table wrapper if needed
+			if m.dbResultTable == nil || len(m.dbQueryResult.Rows) != len(m.dbResultTable.allRows) {
+				// Get responsive table dimensions
+				tableWidth, tableHeight := m.layout.GetTableDimensions()
+
+				// Create new table wrapper with all results
+				dbResultTable := NewBubblesTableWrapper(
+					m.dbQueryResult.Columns,
+					m.dbQueryResult.Rows,
+					tableWidth,
+					tableHeight,
+				)
+
+				tableContent := dbResultTable.Render()
+
+				resultPanel := GetResponsivePanelStyle(m.layout).
+					BorderForeground(lipgloss.Color(ColorBorder)).
+					Render(tableContent)
+
+				b.WriteString(resultPanel)
+				b.WriteString("\n\n")
+
+				// Show pagination summary and performance info
+				summary := dbResultTable.GetPerformanceStats()
+				b.WriteString(SuccessStyle.Render("✓ " + summary))
+
+				// Show additional info for large datasets
+				if dbResultTable.IsLargeDataset() {
+					memEstimate := dbResultTable.GetMemoryEstimate()
+					perfInfo := fmt.Sprintf("Large dataset • ~%dKB memory", memEstimate)
+					b.WriteString("\n")
+					b.WriteString(MutedStyle.Render(perfInfo))
+				}
+
+				paginationFooter := dbResultTable.RenderPaginationFooter()
+				if paginationFooter != "" {
+					b.WriteString("\n")
+					b.WriteString(MutedStyle.Render(paginationFooter))
+				}
+			} else {
+				// Use existing table wrapper
+				tableContent := m.dbResultTable.Render()
+
+				resultPanel := GetResponsivePanelStyle(m.layout).
+					BorderForeground(lipgloss.Color(ColorBorder)).
+					Render(tableContent)
+
+				b.WriteString(resultPanel)
+				b.WriteString("\n\n")
+
+				// Show pagination summary and performance info
+				summary := m.dbResultTable.GetPerformanceStats()
+				b.WriteString(SuccessStyle.Render("✓ " + summary))
+
+				// Show additional info for large datasets
+				if m.dbResultTable.IsLargeDataset() {
+					memEstimate := m.dbResultTable.GetMemoryEstimate()
+					perfInfo := fmt.Sprintf("Large dataset • ~%dKB memory", memEstimate)
+					b.WriteString("\n")
+					b.WriteString(MutedStyle.Render(perfInfo))
+				}
+
+				paginationFooter := m.dbResultTable.RenderPaginationFooter()
+				if paginationFooter != "" {
+					b.WriteString("\n")
+					b.WriteString(MutedStyle.Render(paginationFooter))
+				}
 			}
-
-			tableRenderer := NewTableRenderer(m.dbQueryResult.Columns, rowsToShow, m.width-20)
-			tableContent := tableRenderer.Render()
-
-			resultPanel := lipgloss.NewStyle().
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color(ColorBorder)).
-				Padding(1, 2).
-				Width(m.width - 10).
-				Render(tableContent)
-
-			b.WriteString(resultPanel)
-			b.WriteString("\n\n")
-
-			summary := tableRenderer.RenderSummary(len(m.dbQueryResult.Rows), len(rowsToShow))
-			b.WriteString(SuccessStyle.Render("✓ " + summary))
 		} else {
 			b.WriteString(SuccessStyle.Render("✓ Query executed successfully"))
 			b.WriteString("\n\n")
@@ -2418,33 +2576,54 @@ func (m Model) viewDatabaseResult() string {
 	}
 
 	b.WriteString("\n\n")
-	b.WriteString(RenderFooter("s: save query • e: export results • Esc: back to editor"))
 
-	return Center(m.width, m.height, b.String())
+	// Generate responsive footer
+	helpText := ""
+	if m.dbResultTable != nil && m.dbResultTable.GetTotalPages() > 1 {
+		if m.dbResultTable.IsLargeDataset() {
+			// Extended navigation for large datasets
+			helpText = "←/→: page • home/end: first/last • pgup/pgdn: jump 5 pages • s: save • e: export • esc: back"
+		} else {
+			// Standard navigation for smaller datasets
+			helpText = "←/→: navigate pages • s: save query • e: export results • esc: back"
+		}
+	} else {
+		helpText = "s: save query • e: export results • esc: back"
+	}
+
+	b.WriteString(RenderResponsiveFooter(helpText, m.layout))
+
+	return CenterResponsive(m.layout, b.String())
 }
 
 func (m Model) handleDatabaseQueryListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "ctrl+c", "ctrl+q":
+	// Handle global keys first
+	if key.Matches(msg, m.keymap.Quit) {
 		return m, tea.Quit
+	}
 
-	case "esc":
+	if key.Matches(msg, m.keymap.Back) {
 		m.state = StateDatabase
 		return m, nil
+	}
 
-	case "up", "k":
+	// Handle navigation
+	if key.Matches(msg, m.keymap.Up, m.keymap.VimUp) {
 		if m.dbSelectedQueryIdx > 0 {
 			m.dbSelectedQueryIdx--
 		}
 		return m, nil
+	}
 
-	case "down", "j":
+	if key.Matches(msg, m.keymap.Down, m.keymap.VimDown) {
 		if m.dbSelectedQueryIdx < len(m.dbSavedQueries)-1 {
 			m.dbSelectedQueryIdx++
 		}
 		return m, nil
+	}
 
-	case "enter":
+	// Handle selection and actions
+	if key.Matches(msg, m.keymap.Enter, m.keymap.SelectItem) {
 		if len(m.dbSavedQueries) > 0 && m.dbSelectedQueryIdx < len(m.dbSavedQueries) {
 			query := m.dbSavedQueries[m.dbSelectedQueryIdx]
 			m.dbQueryEditor.SetValue(query.Query)
@@ -2452,8 +2631,9 @@ func (m Model) handleDatabaseQueryListKeys(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			m.dbQueryEditor.Focus()
 		}
 		return m, nil
+	}
 
-	case "d":
+	if key.Matches(msg, m.keymap.DeleteItem) {
 		if len(m.dbSavedQueries) > 0 && m.dbSelectedQueryIdx < len(m.dbSavedQueries) && m.dbStorage != nil {
 			query := m.dbSavedQueries[m.dbSelectedQueryIdx]
 			m.dbStorage.DeleteQuery(query.ID)
